@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+
+access_account_custom_report,access.account.custom.report,model_account_custom_report,account.group_account_invoice,1,1,1,1
+access_account_custom_report,access.account.custom.report,model_account_custom_report,account.group_account_manager,1,1,1,1
+
+access_general_ledger_excel,access.general.ledger.excel,model_general_ledger_excel,account.group_account_manager,1,1,1,1
+access_general_ledger_excel,access.general.ledger.excel,model_general_ledger_excel,account.group_account_invoice,1,1,1,1
+access_general_ledger_excel,access.general.ledger.excel,model_general_ledger_excel,base.group_user,1,1,1,1
+

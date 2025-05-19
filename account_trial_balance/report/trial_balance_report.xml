@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_trial_balance">
+        <t t-call="web.html_container">
+        <t t-call="web.internal_layout">
+            <div class="page">
+                <h3 class="text-center">Trial Balance</h3>
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                         	<th><strong>From: <span t-esc="time.strftime('%d-%b-%Y',time.strptime(data['form'].get('date_from'),'%Y-%m-%d'))"/> </strong>
+                        	&#160;<strong> To: <span t-esc="time.strftime('%d-%b-%Y',time.strptime(data['form'].get('date_to'),'%Y-%m-%d'))"/></strong></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+                <t t-if="get_trial_balance">
+                    <table class="table table-condensed" style="border:solid 1px;">
+                        <br/>
+                        <thead>
+                        	<t t-if="data['form'].get('show_dr_cr_separately')">
+	                            <tr style="border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Account Code</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Account Name</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Op.Debit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Op.Credit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Tr.Debit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Tr.Credit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Closing Debit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Closing Credit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Net Balance</strong></th>
+	                            </tr>
+							</t>
+                        	<t t-if="not data['form'].get('show_dr_cr_separately')">
+	                            <tr style="border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Account Code</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Account Name</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Tr.Debit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Tr.Credit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Closing Debit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Closing Credit</strong></th>
+	                                <th style="font-size:16px;color:#FEFFFF;background-color:#10109B;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;"><strong>Net Balance</strong></th>
+	                            </tr>
+							</t>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="get_trial_balance" t-as="val" style="border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+                            	<t t-if="val.get('caret_options')">
+	                                <td style="width: 80px;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                    <span t-esc="val.get('code')"/>
+	                                </td>
+	                                <td style="width: 80px;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                    <span t-esc="val.get('name')"/>
+	                                </td>
+	                                <t t-foreach="val.get('columns')" t-as="s" style="width: 80px;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                	<t t-if="s.get('name') == '0.0'">
+	                                		<td style="width: 80px;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                        	<span t-esc="0"/>
+	                                    	</td>
+	                                    </t>
+	                                    <t t-if="s.get('name') != '0.0'">
+		                                    <td style="width: 80px;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+		                                        <span t-esc="s.get('name')" t-options='{"widget": "float", "precision": decimal_precision}'/>
+		                                    </td>
+	                                	</t>
+	                                </t>
+	                            </t>
+	                            <t t-if="not val.get('caret_options')">
+	                            	<td style="font-weight: bold;font-size:16px;color:#0000ff;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                    <span t-esc="val.get('code')"/>
+	                                </td>
+	                                <td style="font-weight: bold;font-size:16px;color:#0000ff;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                    <span t-esc="val.get('name')"/>
+	                                </td>
+	                                <t t-foreach="val.get('columns')" t-as="s" style="font-weight: bold;font-size:16px;color:#0000ff;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                	<t t-if="s.get('name') == '0.0'">
+	                                		<td style="font-weight: bold;font-size:16px;color:#0000ff;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+	                                        	<span t-esc="0"/>
+	                                    	</td>
+	                                    </t>
+	                                    <t t-if="s.get('name') != '0.0'">
+		                                    <td style="font-weight: bold;font-size:16px;color:#0000ff;border-right:solid 1px;border-left:solid 1px;border-top:solid 1px;border-bottom:solid 1px;">
+		                                        <span t-esc="s.get('name')" t-options='{"widget": "float", "precision": decimal_precision}'/>
+		                                    </td>
+		                                </t>
+	                                </t>
+	                            </t>
+                            </tr>
+                        </tbody>
+                    </table>
+                </t>
+            </div>
+        </t>
+        </t>
+    </template>
+
+    <record id="action_report_trial_balances" model="ir.actions.report">
+        <field name="name">Trial Balance</field>
+        <field name="model">account.move.line</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">account_trial_balance.report_trial_balance</field>
+        <field name="report_file">account_trial_balance.report_trial_balance</field>
+        <field name="binding_model_id" eval="False"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="account_report_customization.paperformat_general_ledger_pdf"/>
+   </record>
+
+</odoo>

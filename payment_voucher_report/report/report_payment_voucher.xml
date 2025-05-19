@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_invoice_payment_voucher">
+        <t t-call="web.basic_layout">
+            <style>
+                .pv-bg{
+                background: #ddd9c4 !important;
+                }
+                .flexrow {
+                display: -webkit-box;
+                display: -webkit-flex;
+                display: flex;
+                margin-top: 30px;
+                }
+                .flexrow > div {
+                -webkit-box-flex: 1;
+                -webkit-flex: 1;
+                flex: 1;
+                margin-right: 10%;
+                text-align: center;
+                }
+                .flexrow > div:last-child {
+                margin-right: 0;
+                }
+                div.outer-div {
+                height: 40px;
+                }
+                div.middle-div {
+                position: relative;
+                top: 50%;
+                -webkit-transform: translateY(-50%);
+                -ms-transform: translateY(-50%);
+                transform: translateY(-50%);
+                }
+            </style>
+            <t t-set="o" t-value="o.with_context(lang=lang)"/>
+            <t t-set="allow_company_id" t-value="o.get_allowed_company_id()"/>
+            <div class="page">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-5" style="margin-top:30px">
+                            <h5 class="text-center fw-bold">
+                                <t t-esc="allow_company_id.name"/>
+                            </h5>
+                        </div>
+                        <div class="col-2 text-center">
+                            <img t-if="allow_company_id.logo" t-att-src="image_data_uri(allow_company_id.logo)"
+                                 alt="Logo" style="max-height: 75px"/>
+                        </div>
+                        <div class="col-5" style="margin-top:30px">
+                            <div class="text-center fw-bold">
+                                شركة مانيفيستو الشرق الأوسط المحدودة
+                            </div>
+                        </div>
+                    </div>
+                    <!--<div class="row">
+                        <div class="col-12">
+                            <h5 class="text-center fw-bold">
+                                <span style="margin-right:30px;"><t t-esc="allow_company_id.name"/></span>
+                                <img t-if="allow_company_id.logo" t-att-src="image_data_uri(allow_company_id.logo)"
+                                     alt="Logo" style="max-height: 75px;margin-right:25px;"/>
+                                شركة مانيفيستو الشرق الأوسط المحدودة
+                            </h5>
+                        </div>
+                    </div>-->
+                    <hr style="border: solid"/>
+                    <table class="table" style="border-color: white;">
+                        <tr>
+                            <td class="text-center">
+                                <t t-if="o.payment_voucher_currency_id.name == 'USD'">
+                                دولار
+                                </t>
+                                <t t-if="o.payment_voucher_currency_id.name == 'EUR'">
+                                اليورو
+                                </t>
+                                <br/>
+                                <strong t-esc="o.payment_voucher_currency_id.name or 'SAR'"/>
+                            </td>
+                            <td class="text-center">
+                                <div class="pv-bg outer-div"
+                                     style="border:solid 1px;height:40px;position: relative;top: 50%;">
+                                    <div class="middle-div fw-bold"
+                                         t-esc="o.get_converted_currency_value()" t-options="{'widget': 'float', 'precision': 2}"/>
+                                </div>
+                            </td>
+                            <td class="text-center">المبلغ
+                                <br/>
+                                <strong>Amount</strong>
+                            </td>
+                            <td/>
+                            <td class="text-center">سند صرف
+                                <br/>
+                                <strong>Payment Voucher</strong>
+                                <br/>
+                                <span t-if="o.state == 'draft'" t-esc="str(o.pv_sequence)"/>
+                                <span t-else="" t-esc="o.name+ ', ' +str(o.pv_sequence)"/>
+                            </td>
+                            <td class="text-center">
+                                <strong>Date</strong>
+                                <br/>
+                                <span t-esc="o.get_today_date()"/>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="row" style="margin-bottom:10px;">
+                        <div class="col-2">
+                            <p>
+                                <strong>Pay to the order of</strong>
+                            </p>
+                        </div>
+                        <div class="col-9 text-center">
+                            <div style="border-bottom: solid 1px;">
+                                <span t-field="o.payment_voucher_partner"/>
+                            </div>
+                        </div>
+                        <div class="col-1">
+                            ادفعوا إلى
+                        </div>
+                    </div>
+                    <div class="row d-flex align-items-center">
+                        <div class="col-2 justify-content-center align-self-center">
+                            <strong>The Amount of</strong>
+                        </div>
+                        <div class="pv-bg col-9 text-center justify-content-center align-self-center"
+                             style="border:solid 1px;">
+                            <div style="margin-top:5px;" t-esc="o.get_currency_in_words()"/>
+                        </div>
+                        <div class="col-1 text-center justify-content-center align-self-center">
+                            مبلغ و قدره
+                        </div>
+                    </div>
+
+
+                    <div class="row mt-5" style="margin-top:15px">
+                        <div class="col-12">
+                            <table class="table table-bordered" style="border-color: black;">
+                                <tr>
+                                    <td class="pv-bg text-center fw-bold">Project</td>
+                                    <td class="text-center fw-bold">مشروع</td>
+                                    <td class="pv-bg text-center fw-bold">
+                                        <t t-esc="o.bank_account_id.bank_id.name"/>
+                                    </td>
+                                    <td class="text-center fw-bold">Bank على بنك</td>
+                                    <td class="text-center fw-bold">Payment Method طريقة الدفع</td>
+                                </tr>
+                                <tr>
+                                    <td class="pv-bg text-center fw-bold"><span t-esc="o.get_analytic_distribution(o.line_ids.filtered(lambda l: l.analytic_distribution).mapped('analytic_distribution'))"/></td>
+                                    <td class="text-center fw-bold">اسم</td>
+                                    <td class="pv-bg text-center fw-bold">-</td>
+                                    <td class="text-center fw-bold">Cheque No شيك .</td>
+                                    <td class="pv-bg text-center fw-bold"><t t-esc="o.payment_voucher_payment_method"/></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top:15px">
+                        <div class="col-12">
+                            <t t-set="total_credit" t-value="0"/>
+                            <table class="table table-bordered" style="border-color: black;">
+                                <!--<thead>
+
+                                </thead>-->
+                                <tbody>
+                                    <tr style="border-bottom: red">
+                                        <th t-if="o.payment_voucher_currency_id and o.payment_voucher_currency_id.name != 'SAR'">
+                                            <span t-field="o.payment_voucher_currency_id.pv_report_string"/>
+                                            <div style="margin-top:5px" t-esc="o.payment_voucher_currency_id.name"/>
+                                        </th>
+                                        <th>
+                                            <span t-field="o.payment_voucher_currency_id.pv_report_string"/>
+                                            <div style="margin-top:5px">SAR</div>
+                                        </th>
+                                        <th>مركز التكلفة
+                                            <div style="margin-top:5px">Cost Center</div>
+                                        </th>
+                                        <th>وصف
+                                            <div style="margin-top:5px">Description</div>
+                                        </th>
+                                        <th>رقم الحساب
+                                            <div style="margin-top:5px">Acc. No</div>
+                                        </th>
+                                    </tr>
+                                    <tr t-foreach="o.line_ids.filtered(lambda l: l.show_in_pv_report)" t-as="line">
+                                        <t t-set="line_amount" t-value="line.credit or line.debit"/>
+                                        <t t-set="total_credit" t-value="total_credit + line_amount"/>
+                                        <td t-if="o.payment_voucher_currency_id and o.payment_voucher_currency_id.name != 'SAR'" class="text-center"
+                                            t-esc="line_amount / o.currency_rate"
+                                            t-options="{'widget': 'float', 'precision': 2}"/>
+                                        <td class="text-center" t-esc="line_amount"
+                                            t-options="{'widget': 'float', 'precision': 2}"/>
+                                        <td class="text-center" t-esc="o.get_analytic_distribution(line.mapped('analytic_distribution'))"/>
+                                        <td class="text-center" t-esc="line.name"/>
+                                        <td class="text-center" t-esc="line.account_id.display_name"/>
+                                    </tr>
+                                    <tr t-foreach="o.wht_expense_ids" t-as="wht_line">
+                                        <td t-if="o.payment_voucher_currency_id and o.payment_voucher_currency_id.name != 'SAR'" class="text-center"
+                                            t-esc="wht_line.amount / o.currency_rate" t-options="{'widget': 'float', 'precision': 2}"/>
+                                        <td class="text-center"
+                                            t-esc="wht_line.amount" t-options="{'widget': 'float', 'precision': 2}"/>
+                                        <td class="text-center" t-esc="o.get_analytic_distribution(wht_line.account_move_line_id.mapped('analytic_distribution'))"/>
+                                        <td class="text-center" t-esc="wht_line.name"/>
+                                        <td class="text-center" t-esc="wht_line.debit_account_id.display_name"/>
+                                    </tr>
+                                    <tr>
+                                        <td t-if="o.payment_voucher_currency_id and o.payment_voucher_currency_id.name != 'SAR'" class="pv-bg text-center fw-bold"
+                                            t-esc="total_credit / o.currency_rate"
+                                            t-options="{'widget': 'float', 'precision': 2}"/>
+                                        <td class="pv-bg text-center fw-bold" t-esc="total_credit"
+                                            t-options="{'widget': 'float', 'precision': 2}"/>
+                                        <td colspan="3"></td>
+
+                                    </tr>
+                                    <tr style="border-color:transparent">
+                                        <td t-if="o.payment_voucher_currency_id and o.payment_voucher_currency_id.name != 'SAR'"></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr style="border-color:transparent">
+                                        <td style="height:50%;padding: 0px;">
+                                            <!--<div class="pv-bg" style="border:solid 2px;height:100px"
+                                                 t-options="{'widget': 'float', 'precision': 2}"/>-->
+                                            <div class="pv-bg outer-div text-center"
+                                                 style="border:solid 2px;height:40px;position: relative;top: 50%;">
+                                                <div class="middle-div fw-bold" t-esc="o.get_converted_currency_value()"
+                                                     t-options="{'widget': 'float', 'precision': 2}"/>
+                                            </div>
+                                        </td>
+                                        <td class="fw-bold">Balance Paid</td>
+                                        <td></td>
+                                        <td class="text-center" colspan="2">
+                                            <strong t-field="o.bank_account_id"/>
+                                            <hr/>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row" style="line-height: 0.1;margin-top:15px">
+                        <div class="col-12 text-center">
+                            <hr/>
+                            <hr/>
+                            <p>
+                                <strong class="text-decoration-underline">
+                                    <t t-esc="allow_company_id.name"/>
+                                </strong>
+                            </p>
+                            <hr/>
+                        </div>
+                    </div>
+                    <div class="flexrow">
+                        <div class="p-2">موافقة
+                            <br/>Approval
+                            <br/>
+                            <br/>
+                            <br/>
+                            <hr/>
+                        </div>
+                        <div class="p-2">المالية
+                            <br/>Finance
+                            <br/>
+                            <br/>
+                            <br/>
+                            <hr/>
+                        </div>
+                        <div class="p-2">مراجع
+                            <br/>Reviewer
+                            <br/>
+                            <br/>
+                            <br/>
+                            <hr/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_payment_voucher">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="lang"
+                   t-value="o.invoice_user_id.sudo().lang if o.move_type in ('in_invoice', 'in_refund') else o.partner_id.lang"/>
+                <t t-call="payment_voucher_report.report_invoice_payment_voucher" t-lang="lang"/>
+            </t>
+        </t>
+    </template>
+    <record id="paperformat_payment_voucher" model="report.paperformat">
+        <field name="name">US Letter Payment Voucher</field>
+        <field name="default" eval="True"/>
+        <field name="format">Letter</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">20</field>
+        <field name="margin_bottom">16</field>
+        <field name="margin_left">3</field>
+        <field name="margin_right">3</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">9</field>
+        <field name="dpi">110</field>
+    </record>
+    <record id="action_report_payment_voucher" model="ir.actions.report">
+        <field name="name">Payment Voucher</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">payment_voucher_report.report_payment_voucher</field>
+        <field name="report_file">payment_voucher_report.report_payment_voucher</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">object.pv_sequence or 'Payment-Voucher'</field>
+        <field name="paperformat_id" ref="payment_voucher_report.paperformat_payment_voucher"/>
+    </record>
+
+</odoo>
