@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_account_move_form_inherit_for_report" model="ir.ui.view">
+        <field name="name">account.move.form.inh.for.report</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='payment_reference']" position="after">
+                <field name="show_project_info"/>
+                <field name="is_contract"/>
+                <field name="purchase_order_number"
+                       invisible="is_contract"/>
+                <field name="contract_order_number"
+                        invisible="not is_contract"/>
+                <field name="projectname"/>
+                <field name="bank_account_id"/>
+                <field name="notes" string="Description"/>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                 <field name="internal_custom_invoice_no"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

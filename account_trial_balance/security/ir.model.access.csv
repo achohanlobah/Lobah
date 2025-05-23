@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_account_trial_balance_report,access.account.trial.balance.report,model_account_trial_balance_report,account.group_account_manager,1,1,1,1
+access_trial_balance_report,account.trial.balance.report,model_account_trial_balance_report,account.group_account_invoice,1,1,1,1
+access_account_trial_balance_report_base,access.account.trial.balance.report,model_account_trial_balance_report,base.group_user,1,1,1,1
+access_trial_balance_excel_manager,trial.balance.excel,model_trial_balance_excel,account.group_account_manager,1,1,1,1
+access_trial_balance_excel_invoice,trial.balance.excel,model_trial_balance_excel,account.group_account_invoice,1,1,1,1
+access_trial_balance_excel_base,trial.balance.excel,model_trial_balance_excel,base.group_user,1,1,1,1

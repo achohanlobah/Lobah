@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_balance_sheet_custom_report,balance.sheet.custom.report,model_balance_sheet_custom_report,account.group_account_manager,1,1,1,1
+access_balance_sheet_custom_report,balance.sheet.custom.report,model_balance_sheet_custom_report,account.group_account_invoice,1,1,1,1
+access_balance_sheet_custom_report,balance.sheet.custom.report,model_balance_sheet_custom_report,base.group_user,1,1,1,1
+access_balance_sheet_excel,balance.sheet.excel,model_balance_sheet_excel,account.group_account_manager,1,1,1,1
+access_balance_sheet_excel,balance.sheet.excel,model_balance_sheet_excel,account.group_account_invoice,1,1,1,1
+access_balance_sheet_excel,balance.sheet.excel,model_balance_sheet_excel,base.group_user,1,1,1,1
