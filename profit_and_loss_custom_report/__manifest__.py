@@ -8,7 +8,7 @@
 
 {
     'name': 'Profit And Loss Custom Report',
-    'version': '1.1',
+    'version': '1.2',
     'license': 'LGPL-3',
     'summary': 'Profit And Loss',
     'category': ' ',
