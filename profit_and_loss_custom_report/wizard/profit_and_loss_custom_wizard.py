@@ -95,7 +95,7 @@ class ProfitLossCustomReport(models.TransientModel):
                 SELECT aml.date as date,
                        aml.debit as debit,
                        aml.credit as credit,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        a.account_type as acc_type,
                        aa.name->>'en_US' as analytic,
@@ -121,7 +121,7 @@ class ProfitLossCustomReport(models.TransientModel):
                     date = ml[0]
                     acount_debit = ml[1]
                     account_credit = ml[2]
-                    account_code = ml[3]
+                    account_code = next(iter(ml[3].values()), '')
                     account_name = ml[4]
                     account_type = ml[5]
                     analytic_account_id = ml[6]
@@ -199,7 +199,7 @@ class ProfitLossCustomReport(models.TransientModel):
                 SELECT aml.date as date,
                        aml.debit as debit,
                        aml.credit as credit,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        a.account_type as acc_type,
                        aa.name->>'en_US' as analytic,
@@ -225,7 +225,7 @@ class ProfitLossCustomReport(models.TransientModel):
                     date = ml[0]
                     acount_debit = ml[1]
                     account_credit = ml[2]
-                    account_code = ml[3]
+                    account_code = next(iter(ml[3].values()), '')
                     account_name = ml[4]
                     account_type = ml[5]
                     analytic_account_id = ml[6]
