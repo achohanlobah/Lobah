@@ -16,7 +16,7 @@ class AccountGroup(models.Model):
         complete_code and complete_code does not used anywhere 
         but in old module it is there 
     """
-    complete_name = fields.Char("Full Name", compute="_compute_complete_name")
+    complete_name = fields.Char("Full Name", compute="_compute_complete_name", recursive=True)
     complete_code = fields.Char("Full Code", compute="_compute_complete_code",recursive=True)
 
     @api.depends("name", "parent_id.complete_name")
