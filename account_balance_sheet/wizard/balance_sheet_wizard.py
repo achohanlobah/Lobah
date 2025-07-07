@@ -114,7 +114,7 @@ class BalanceSheetReport(models.TransientModel):
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (a.id=aml.account_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -186,7 +186,7 @@ class BalanceSheetReport(models.TransientModel):
                     FROM account_move_line aml
                     LEFT JOIN account_move am ON (am.id=aml.move_id)
                     LEFT JOIN LATERAL (
-                        SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                        SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                         FROM jsonb_each_text(aml.analytic_distribution)
                     ) ak ON true
                     LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -259,7 +259,7 @@ class BalanceSheetReport(models.TransientModel):
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (a.id=aml.account_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -428,7 +428,7 @@ class BalanceSheetReport(models.TransientModel):
                 FROM account_move_line aml
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -483,7 +483,7 @@ class BalanceSheetReport(models.TransientModel):
                     FROM account_move_line aml
                     LEFT JOIN account_move am ON (am.id=aml.move_id)
                     LEFT JOIN LATERAL (
-                        SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                        SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                         FROM jsonb_each_text(aml.analytic_distribution)
                     ) ak ON true
                     LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -749,7 +749,7 @@ class BalanceSheetReport(models.TransientModel):
                 FROM account_move_line aml
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -989,7 +989,7 @@ class BalanceSheetReport(models.TransientModel):
                 FROM account_move_line aml
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -1068,7 +1068,7 @@ class BalanceSheetReport(models.TransientModel):
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (a.id=aml.account_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -1149,7 +1149,7 @@ class BalanceSheetReport(models.TransientModel):
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (a.id=aml.account_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id

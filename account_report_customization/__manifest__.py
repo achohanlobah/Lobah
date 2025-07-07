@@ -8,7 +8,7 @@
 
 {
     'name': 'Account Report Customization',
-    'version': '1.0',
+    'version': '1.1',
     'license': 'LGPL-3',
     'summary': 'Account Report Customization',
     'category': '',
