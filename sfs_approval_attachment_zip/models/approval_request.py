@@ -6,6 +6,8 @@ from io import BytesIO
 import re
 import logging
 
+
+from odoo.tools import pdf
 from odoo import models
 
 _logger = logging.getLogger(__name__)
@@ -69,3 +71,74 @@ class ApprovalRequest(models.Model):
                 'sticky': False,
             }
         }
+
+    def action_pdf_attachments_download(self):
+        """Download the PDF for Particular approval from Server Action"""
+        attachments = self.env['ir.attachment'].search([
+            ('res_model', '=', 'approval.request'),
+            ('res_id', 'in', self.ids)
+        ], order='id asc')
+        if not attachments:
+            return self.no_attachment_erro()
+
+        file_name = 'Attachments'
+        if len(self.ids) == 1:
+            file_name = 'Attachments' if self.name == '/' else self.name
+
+        attachment = self.merge_attachment_pdf(attachments, name=file_name, move_name='Attachments')
+
+        # If merge_attachment_pdf returned a dict (warning), return it directly
+        if isinstance(attachment, dict):
+            return attachment
+
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/web/content/{attachment.id}?download=true',
+            'target': 'self',
+        }
+
+    def no_attachment_erro(self):
+        """Error if no any Attachment Found in Journal Entries"""
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'No PDF',
+                'message': 'No PDF found for the selected Journal Entries.',
+                'type': 'warning',
+                'sticky': False,
+            }
+        }
+
+    def merge_attachment_pdf(self, attachment_ids, name, move_name):
+        """Create Merge PDF for the Attachment"""
+        data = []
+        for attachment in attachment_ids:
+            if attachment.mimetype == 'application/pdf':
+                if not attachment.datas:
+                    _logger.warning("Skipping empty attachment %s (ID %s)", attachment.name, attachment.id)
+                    continue
+                try:
+                    stream = pdf.to_pdf_stream(attachment)
+                    if not stream or stream.getbuffer().nbytes == 0:
+                        _logger.warning("Skipping invalid PDF stream for %s (ID %s)", attachment.name, attachment.id)
+                        continue
+                    stream = pdf.add_banner(stream, move_name, logo=True)
+                    pdf_content = stream.getvalue()
+                    if pdf_content:
+                        data.append(pdf_content)
+                except Exception as e:
+                    _logger.warning("Skipping corrupted PDF attachment %s (ID %s): %s", attachment.name, attachment.id,
+                                    e)
+                    continue
+
+        if not data:
+            return self.no_attachment_erro()
+
+        pdf_content = pdf.merge_pdf(data)
+        attachment = self.env['ir.attachment'].create({
+            'type': 'binary',
+            'name': name + '.pdf',
+            'datas': base64.encodebytes(pdf_content),
+        })
+        return attachment
