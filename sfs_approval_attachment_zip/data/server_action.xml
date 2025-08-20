@@ -9,4 +9,12 @@
         <field name="code">if records: action = records.action_attachments_download()</field>
     </record>
 
+    <record id="action_approval_pdf_attachments_download" model="ir.actions.server">
+        <field name="name">Download Attachment PDF</field>
+        <field name="model_id" ref="approvals.model_approval_request"/>
+        <field name="binding_model_id" ref="approvals.model_approval_request"/>
+        <field name="state">code</field>
+        <field name="code">if records: action = records.action_pdf_attachments_download()</field>
+    </record>
+
 </odoo>

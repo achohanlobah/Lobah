@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_approval_request_form_inherit" model="ir.ui.view">
+        <field name="name">approval.request.form.inherit.reason</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approvals.approval_request_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Locate the original field -->
+            <xpath expr="//page[@name='description']/field[@name='reason']" position="attributes">
+                <!-- Remove readonly -->
+                <attribute name="readonly">0</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

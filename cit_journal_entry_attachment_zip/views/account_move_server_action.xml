@@ -9,4 +9,13 @@
         <field name="code">if records: action = records.action_attachments_download()</field>
     </record>
 
+    <record model="ir.actions.server" id="action_form_attachments_download">
+        <field name="name">Download Attachment</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="binding_model_id" ref="account.model_account_move" />
+        <field name="state">code</field>
+        <field name="binding_view_types">form</field>
+        <field name="code">if records: action = records.action_attachments_download()</field>
+    </record>
+
 </odoo>
