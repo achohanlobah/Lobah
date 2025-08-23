@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_aprroval_request_document_sfs" inherit_id="approvals.report_aprroval_request_document">
+        <xpath expr="//div[@class='row mt-4']" position="after">
+            <!-- Extra Information Section -->
+            <div class="row mt-4">
+                <div class="col-6">
+                    <div class="row mt-1" t-if="o.x_studio_currency_id">
+                        <h6 class="col-4 fw-bold">Currency:</h6>
+                        <h6>
+                            <span t-field="o.x_studio_currency_id.name"/>
+                        </h6>
+                    </div>
+                    <div class="row mt-1" t-if="o.x_studio_analytic_account">
+                        <h6 class="col-4 fw-bold">Analytic Account:</h6>
+                        <h6>
+                            <span t-field="o.x_studio_analytic_account.name"/>
+                        </h6>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="row mt-1" t-if="o.x_studio_requester_1">
+                        <h6 class="col-4 fw-bold">Requester:</h6>
+                        <h6>
+                            <span t-field="o.x_studio_requester_1"/>
+                        </h6>
+                    </div>
+                    <div class="row mt-1" t-if="o.x_studio_beneficiary">
+                        <h6 class="col-4 fw-bold">Beneficiary:</h6>
+                        <h6>
+                            <span t-field="o.x_studio_beneficiary"/>
+                        </h6>
+                    </div>
+                    <div class="row mt-1" t-if="o.x_studio_country_1">
+                        <h6 class="col-4 fw-bold">Country:</h6>
+                        <h6>
+                            <span t-field="o.x_studio_country_1"/>
+                        </h6>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+</odoo>
