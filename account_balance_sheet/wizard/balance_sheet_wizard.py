@@ -105,7 +105,7 @@ class BalanceSheetReport(models.TransientModel):
                 SELECT aml.date as date,
                        aml.debit as debit,
                        aml.credit as credit,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        a.account_type as acc_type,
                        aa.name->>'en_US' as analytic,
@@ -114,7 +114,7 @@ class BalanceSheetReport(models.TransientModel):
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (a.id=aml.account_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -178,7 +178,7 @@ class BalanceSheetReport(models.TransientModel):
                     SELECT aml.date as date,
                            aml.debit as debit,
                            aml.credit as credit,
-                           a.code as code,
+                           a.code_store as code,
                            a.name->>'en_US' as acc_name,
                            a.account_type as acc_type,
                            aa.name->>'en_US' as analytic,
@@ -186,7 +186,7 @@ class BalanceSheetReport(models.TransientModel):
                     FROM account_move_line aml
                     LEFT JOIN account_move am ON (am.id=aml.move_id)
                     LEFT JOIN LATERAL (
-                        SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                        SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                         FROM jsonb_each_text(aml.analytic_distribution)
                     ) ak ON true
                     LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -251,7 +251,7 @@ class BalanceSheetReport(models.TransientModel):
                        a.account_type as acc_type,
                        aml.debit as debit,
                        aml.credit as credit,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        aa.name->>'en_US' as analytic,
                        aml.id as movelineid
@@ -259,7 +259,7 @@ class BalanceSheetReport(models.TransientModel):
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (a.id=aml.account_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -420,7 +420,7 @@ class BalanceSheetReport(models.TransientModel):
                        aml.debit as debit,
                        aml.credit as credit,
                        aml.account_id as account_id,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        a.account_type as acc_type,
                        aa.name->>'en_US' as analytic,
@@ -428,7 +428,7 @@ class BalanceSheetReport(models.TransientModel):
                 FROM account_move_line aml
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -475,7 +475,7 @@ class BalanceSheetReport(models.TransientModel):
                            aml.debit as debit,
                            aml.credit as credit,
                            aml.account_id as account_id,
-                           a.code as code,
+                           a.code_store as code,
                            a.name->>'en_US' as acc_name,
                            a.account_type as acc_type,
                            aa.name->>'en_US' as analytic,
@@ -483,7 +483,7 @@ class BalanceSheetReport(models.TransientModel):
                     FROM account_move_line aml
                     LEFT JOIN account_move am ON (am.id=aml.move_id)
                     LEFT JOIN LATERAL (
-                        SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                        SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                         FROM jsonb_each_text(aml.analytic_distribution)
                     ) ak ON true
                     LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -741,7 +741,7 @@ class BalanceSheetReport(models.TransientModel):
                        aml.date as date,
                        aml.debit as debit,
                        aml.credit as credit,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        a.account_type as acc_type,
                        aa.name->>'en_US' as analytic,
@@ -749,7 +749,7 @@ class BalanceSheetReport(models.TransientModel):
                 FROM account_move_line aml
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -981,7 +981,7 @@ class BalanceSheetReport(models.TransientModel):
                 SELECT aml.date as date,
                        aml.debit as debit,
                        aml.credit as credit,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        a.account_type as acc_type,
                        aa.name->>'en_US' as analytic,
@@ -989,7 +989,7 @@ class BalanceSheetReport(models.TransientModel):
                 FROM account_move_line aml
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -1059,7 +1059,7 @@ class BalanceSheetReport(models.TransientModel):
                 SELECT aml.date as date,
                        aml.debit as debit,
                        aml.credit as credit,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        a.account_type as acc_type,
                        aa.name->>'en_US' as analytic,
@@ -1068,7 +1068,7 @@ class BalanceSheetReport(models.TransientModel):
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (a.id=aml.account_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -1141,7 +1141,7 @@ class BalanceSheetReport(models.TransientModel):
                        a.account_type as acc_type,
                        aml.debit as debit,
                        aml.credit as credit,
-                       a.code as code,
+                       a.code_store as code,
                        a.name->>'en_US' as acc_name,
                        aa.name->>'en_US' as analytic,
                        aml.id as movelineid
@@ -1149,7 +1149,7 @@ class BalanceSheetReport(models.TransientModel):
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (a.id=aml.account_id)
                 LEFT JOIN LATERAL (
-                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\d+', 'g'))[1]::int as analytic_key
+                    SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
@@ -1512,7 +1512,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalBankCash += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
@@ -1565,7 +1566,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalReceivable += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
                 col = 3
@@ -1619,7 +1621,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalCurrentAsset += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
@@ -1674,7 +1677,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalPrePayment += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
@@ -1744,7 +1748,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalFixedAssets += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
@@ -1799,7 +1804,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalNonCurrentAssets += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
@@ -1883,7 +1889,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalCurrentLiability += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((abs(mainDict[s]['balance'])),1) ,floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
@@ -1937,7 +1944,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalPayables += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((abs(mainDict[s]['balance'])),2),floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
@@ -2010,7 +2018,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalNonCurrentLiabilities += mainDict[s]['balance']
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round(-abs(mainDict[s]['balance']),2),floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
@@ -2263,7 +2272,8 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalRetainedEarnings += (-mainDict[s]['balance'])
-                worksheet.write(row, 0, mainDict[s]['account_code'],alinedata)
+                account_code = list(mainDict[s]['account_code'].values())[0]
+                worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((abs(mainDict[s]['balance'])),2),floatstyle)
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':

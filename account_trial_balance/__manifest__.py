@@ -8,7 +8,7 @@
 
 {
     'name': 'Account Trial Balance',
-    'version': '1.0',
+    'version': '1.2',
     'summary': 'Account Trial Balance',
     'category': '',
     'description': """
