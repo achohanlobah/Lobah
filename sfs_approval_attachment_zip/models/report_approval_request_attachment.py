@@ -13,7 +13,7 @@ class IrActionsReport(models.Model):
     def _render_qweb_pdf(self, report_ref, res_ids=None, data=None):
         pdf_content, _ = super()._render_qweb_pdf(report_ref, res_ids=res_ids, data=data)
         #Inject pdf attachments into approval request report
-        if report_ref == 'approvals.action_report_approval_request':
+        if report_ref in ['approvals.action_report_approval_request', 'approvals.report_approval_request']:
             _logger.info("Merging report %s with attachments...", report_ref)
             merger = PdfMerger()
             merger.append(BytesIO(pdf_content))
