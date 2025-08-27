@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="approvals.approval_request_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='description']/field[@name='reason']" position="attributes">
-                <attribute name="readonly">0</attribute>
+                <attribute name="readonly">request_status in ['approved']</attribute>
             </xpath>
             <xpath expr="//page[@name='approvers']" position="after">
                 <page string="Merge Attachments">
