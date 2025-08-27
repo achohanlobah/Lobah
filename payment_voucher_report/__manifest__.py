@@ -21,7 +21,6 @@
         'data/ir_sequence.xml',
         'security/ir.model.access.csv',
         'views/account_move_view.xml',
-        'views/account_move_server_action.xml',
         'report/report_payment_voucher.xml',
         'views/res_currency_views.xml',
     ],

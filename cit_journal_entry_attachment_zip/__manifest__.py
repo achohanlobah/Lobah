@@ -18,6 +18,6 @@
     'license': 'LGPL-3',
     'depends': ['account'],
     'data': [
-        'views/account_move_server_action.xml',
+        'data/data.xml',
     ],
 }

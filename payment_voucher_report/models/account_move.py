@@ -87,54 +87,6 @@ class AccountMove(models.Model):
             },
         }
 
-    def action_pdf_attachments_download(self):
-        """This method Download the PDF for Particular Journal Entries from Server Action"""
-        attachments = self.env['ir.attachment'].search([
-            ('res_model', '=', 'account.move'),
-            ('res_id', 'in', self.ids)
-        ], order='id asc')
-        if not attachments:
-            return self.no_attachment_erro()
-        file_name = 'Attachments'
-        if len(self.ids) == 1:
-            file_name = 'Attachments' if self.name == '/' else self.name
-        attachment = self.merge_attachment_pdf(attachments, name=file_name, move_name='Attachments')
-        return {
-            'type': 'ir.actions.act_url',
-            'url': f'/web/content/{attachment.id}?download=true',
-            'target': 'self',
-        }
-
-    def no_attachment_erro(self):
-        """Error if no any Attachment Found in Journal Entries"""
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': 'No PDF',
-                'message': 'No PDF found for the selected Journal Entries.',
-                'type': 'warning',
-                'sticky': False,
-            }
-        }
-
-    def merge_attachment_pdf(self, attachment_ids, name, move_name):
-        """Create Merge PDF for the Attachment"""
-        data = []
-        for attachment in attachment_ids:
-            if attachment.mimetype == 'application/pdf':
-                stream = pdf.to_pdf_stream(attachment)
-                stream = pdf.add_banner(stream, move_name, logo=True)
-                pdf_content = stream.getvalue()
-                data.append(pdf_content)
-        pdf_content = pdf.merge_pdf(data)
-        attachment = self.env['ir.attachment'].create({
-            'type': 'binary',
-            'name': name + '.pdf',
-            'datas': base64.encodebytes(pdf_content),
-        })
-        return attachment
-
     def action_post(self):
         res = super(AccountMove, self).action_post()
         if self.wht_expense_ids:
