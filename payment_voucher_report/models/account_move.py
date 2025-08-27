@@ -11,6 +11,11 @@ from io import BytesIO
 from odoo import models, fields, api
 from odoo.tools import pdf
 from odoo.exceptions import UserError
+from PyPDF2 import PdfMerger, PdfReader
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 class AccountMove(models.Model):
     """Inherit account.move model"""
@@ -21,7 +26,8 @@ class AccountMove(models.Model):
     pv_sequence = fields.Char(string="PV Sequence", copy=False)
     payment_voucher_currency_id = fields.Many2one('res.currency', copy=False)
     currency_rate = fields.Float(string="Currency Conversion Rate", default=1)
-    merge_invoice_attachment_ids = fields.One2many('merge.invoice.attachments', 'account_move_id', string="Merge Attachments", copy=False)
+    merge_invoice_attachment_ids = fields.One2many('merge.invoice.attachments', 'account_move_id',
+                                                   string="Merge Attachments", copy=False)
     payment_voucher_journal_entry_id = fields.Many2one('account.move', copy=False)
     payment_voucher_payment_method = fields.Char(copy=False)
 
@@ -61,25 +67,52 @@ class AccountMove(models.Model):
         return super().write(vals)
 
     def merge_voucher(self):
-        data = []
+        """Merge PDFs from invoice attachments into a single file and save as attachment."""
         if not self.merge_invoice_attachment_ids:
             raise UserError('Please add attachments to merge.')
-        # Merge multiple prepend attachment
-        for attachment in self.merge_invoice_attachment_ids.sorted('sequence'):
-            stream = pdf.to_pdf_stream(attachment.attachment_id)
-            stream = pdf.add_banner(stream, self.name, logo=True)
-            pdf_content = stream.getvalue()
-            data.append(pdf_content)
-            # data.append(base64.b64decode(attachment.attachment_id.datas))
 
-        pdf_content = pdf.merge_pdf(data)
-        attachment = self.env['ir.attachment'].create({
+        merger = PdfMerger()
+        attachments_sorted = self.merge_invoice_attachment_ids.sorted('sequence')
+
+        for attachment in attachments_sorted:
+            attachment_id = attachment.attachment_id
+            try:
+                if not attachment_id or not attachment_id.datas:
+                    _logger.warning("Empty or missing attachment: %s",
+                                    attachment_id.name if attachment_id else 'unknown')
+                    continue
+
+                pdf_data = base64.b64decode(attachment_id.datas)
+                reader = PdfReader(BytesIO(pdf_data))
+
+                if len(reader.pages) > 0:
+                    merger.append(BytesIO(pdf_data))
+                    _logger.info("Appended PDF attachment: %s", attachment_id.name)
+                else:
+                    _logger.warning("Attachment has no pages: %s", attachment_id.name)
+
+            except Exception as e:
+                _logger.warning("Failed to add attachment '%s': %s", attachment_id.name if attachment_id else 'unknown',
+                                e)
+
+        output = BytesIO()
+        merger.write(output)
+        merger.close()
+        output.seek(0)
+
+        merged_pdf = output.read()
+        _logger.info("Merged PDF size: %s bytes", len(merged_pdf))
+
+        self.env['ir.attachment'].create({
+            'name': f'Merged-Attachments.pdf',
             'type': 'binary',
-            'name': 'Merged-Attachments.pdf',
+            'datas': base64.b64encode(merged_pdf),
             'res_model': 'account.move',
             'res_id': self.id,
-            'datas': base64.encodebytes(pdf_content),
+            'mimetype': 'application/pdf',
         })
+        _logger.info("Saved merged PDF as attachment for account.move: %s", self.name)
+
         return {
             'effect': {
                 'type': 'rainbow_man',
@@ -167,6 +200,7 @@ class AccountMove(models.Model):
         o = self
         currency = o.payment_voucher_currency_id or o.currency_id
         return 'Only %s' % currency.amount_to_text(o.get_converted_currency_value())
+
 
 class AccountMoveLine(models.Model):
     """Inherit account.move model"""
