@@ -31,7 +31,6 @@
     # Data Files (Security, Views, Wizards, Data)
     # =========================
     "data": [
-        'views/approval_request_template.xml',
     ],
 
     # =========================
