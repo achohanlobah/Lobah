@@ -25,13 +25,14 @@
     # Dependencies
     # =========================
     "depends": [
-        'approvals'
+        'approvals',
     ],
 
     # =========================
     # Data Files (Security, Views, Wizards, Data)
     # =========================
     "data": [
+        'security/ir.model.access.csv',
         'data/server_action.xml',
         'views/approval_request.xml',
         'report/approval_request_template.xml',

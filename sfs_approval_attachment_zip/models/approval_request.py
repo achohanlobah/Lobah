@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
-
 import base64
 import zipfile
 from io import BytesIO
 import re
 import logging
+from PyPDF2 import PdfMerger, PdfReader
 
-
+from odoo.exceptions import UserError
 from odoo.tools import pdf
-from odoo import models
+from odoo import models, fields
 
 _logger = logging.getLogger(__name__)
 
 
 class ApprovalRequest(models.Model):
     _inherit = 'approval.request'
+
+    merge_approval_attachment_ids = fields.One2many('merge.approval.attachments', 'approval_request_id',
+                                                   string="Merge Attachments", copy=False)
 
     def sanitize_filename(self, name):
         """This method replace any symbol to underscore for file name"""
@@ -38,8 +41,8 @@ class ApprovalRequest(models.Model):
                         for attachment in attachments:
                             sub_zip_file.writestr(attachment.name, base64.b64decode(attachment.datas))
                     sub_zip_buffer.seek(0)
-                    file_name = 'attachments_%s'%approval_id.id if approval_id.name == '/' else approval_id.name
-                    zip_file.writestr(self.sanitize_filename(file_name)+'.zip', sub_zip_buffer.read())
+                    file_name = 'attachments_%s' % approval_id.id if approval_id.name == '/' else approval_id.name
+                    zip_file.writestr(self.sanitize_filename(file_name) + '.zip', sub_zip_buffer.read())
                 zip_buffer.seek(0)
         _logger.info("Zip Create and Combine success!!!!")
 
@@ -142,3 +145,57 @@ class ApprovalRequest(models.Model):
             'datas': base64.encodebytes(pdf_content),
         })
         return attachment
+
+    def merge_approval_attachment(self):
+        """Merge PDFs from approval attachments into a single file and save as attachment."""
+        if not self.merge_approval_attachment_ids:
+            raise UserError('Please add attachments to merge.')
+
+        merger = PdfMerger()
+        attachments_sorted = self.merge_approval_attachment_ids.sorted('sequence')
+
+        for attachment in attachments_sorted:
+            attachment_id = attachment.attachment_id
+            try:
+                if not attachment_id or not attachment_id.datas:
+                    _logger.warning("Empty or missing attachment: %s",
+                                    attachment_id.name if attachment_id else 'unknown')
+                    continue
+
+                pdf_data = base64.b64decode(attachment_id.datas)
+                reader = PdfReader(BytesIO(pdf_data))
+
+                if len(reader.pages) > 0:
+                    merger.append(BytesIO(pdf_data))
+                    _logger.info("Appended PDF attachment: %s", attachment_id.name)
+                else:
+                    _logger.warning("Attachment has no pages: %s", attachment_id.name)
+
+            except Exception as e:
+                _logger.warning("Failed to add attachment '%s': %s", attachment_id.name if attachment_id else 'unknown',
+                                e)
+
+        output = BytesIO()
+        merger.write(output)
+        merger.close()
+        output.seek(0)
+
+        merged_pdf = output.read()
+        _logger.info("Merged PDF size: %s bytes", len(merged_pdf))
+
+        self.env['ir.attachment'].create({
+            'name': f'Merged-Attachments.pdf',
+            'type': 'binary',
+            'datas': base64.b64encode(merged_pdf),
+            'res_model': 'approval.request',
+            'res_id': self.id,
+            'mimetype': 'application/pdf',
+        })
+        _logger.info("Saved merged PDF as attachment for approval.request: %s", self.name)
+
+        return {
+            'effect': {
+                'type': 'rainbow_man',
+                'message': "Merged attachment created successfully",
+            },
+        }
