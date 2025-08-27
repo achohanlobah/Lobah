@@ -32,8 +32,9 @@
     # Data Files (Security, Views, Wizards, Data)
     # =========================
     "data": [
-        'data//server_action.xml',
-        'views/approval_request.xml'
+        'data/server_action.xml',
+        'views/approval_request.xml',
+        'report/approval_request_template.xml',
     ],
 
     # =========================
