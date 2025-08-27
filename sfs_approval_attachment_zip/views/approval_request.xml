@@ -5,10 +5,21 @@
         <field name="model">approval.request</field>
         <field name="inherit_id" ref="approvals.approval_request_view_form"/>
         <field name="arch" type="xml">
-            <!-- Locate the original field -->
             <xpath expr="//page[@name='description']/field[@name='reason']" position="attributes">
-                <!-- Remove readonly -->
                 <attribute name="readonly">0</attribute>
+            </xpath>
+            <xpath expr="//page[@name='approvers']" position="after">
+                <page string="Merge Attachments">
+                    <group string="Merge Attachments"></group>
+                    <field name="merge_approval_attachment_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="approval_request_id" column_invisible="True"/>
+                            <field name="attachment_id"/>
+                        </list>
+                    </field>
+                    <button colspan="2" name="merge_approval_attachment" string="Merge Attachments" type="object"/>
+                </page>
             </xpath>
         </field>
     </record>
