@@ -53,7 +53,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                     (aml.date <= %s) AND
                     (aml.account_id in %s) AND
                     (am.state in %s) ORDER BY aml.date""",
-                (str(dateFrom) + ' 00:00:00', str(dateTo) + ' 23:59:59', tuple(AccountIds), tuple(Status),))
+                                (str(dateFrom) + ' 00:00:00', str(dateTo) + ' 23:59:59', tuple(AccountIds), tuple(Status),))
             MoveLines = [x[0] for x in self.env.cr.fetchall()]
         action['context'] = {'create': False}
         action['domain'] = [('id', 'in', MoveLines)]
@@ -86,7 +86,7 @@ class AccountTrialBalanceReport(models.TransientModel):
             raise UserError(_("Start Date is greater than or equal to End Date."))
         datas = {'form': self.read()[0],
                  'get_trial_balance': self.get_trial_balance_detail()
-            }
+                 }
         return self.env.ref('account_trial_balance.action_report_trial_balances').report_action([], data=datas)
 
     def get_trial_balance_detail(self):
@@ -108,372 +108,25 @@ class AccountTrialBalanceReport(models.TransientModel):
             AnalyticIds = [analytic_account.id for analytic_account in AnalyticAccountIds]
             AnalyticNames = [analytic_account.name for analytic_account in AnalyticAccountIds]
         if self.dimension_wise_project == 'month':
-               dates = {'date_from': dateFrom.strftime('%Y-%m-%d'),'date_to':dateTo.strftime('%Y-%m-%d')}
+            dates = {'date_from': dateFrom.strftime('%Y-%m-%d'),'date_to':dateTo.strftime('%Y-%m-%d')}
         CompanyImage = self.env.company.logo
         group_list = []
         option_dict = {}
         string = dateFrom.strftime('%Y')
         Status = ['posted']
-        initial_balances = [True]  
+        initial_balances = [True]
         accounts = []
         accounts_results = []
         for group_ids in GroupIds:
             group_list.append(group_ids.name)
         queries = []
         option_dict.update({
-                            'unfolded_lines':group_list,
-                            'date':{'string': string,'mode':'range','date_from': dateFrom.strftime('%Y-%m-%d'),'date_to':dateTo.strftime('%Y-%m-%d')},
-                            'analytic_accounts': AnalyticIds,
-                            'analytic_accounts_name':AnalyticNames,
-                            'month_wise_dates': dates,
-                            })
-
-        option_list = [option_dict]
-
-        query, params = self.get_all_queries(option_list)
-        groupby_accounts = {}
-        groupby_companies = {}
-        groupby_taxes = {}
-
-        self._cr.execute(query, params)
-        for res in self.env.cr.dictfetchall():
-
-            if res['groupby'] is None:
-                continue
-
-            i = res['period_number']
-            key = res['key']
-            if key == 'sum':
-                groupby_accounts.setdefault(res['groupby'], [{} for n in range(len(option_list))])
-                groupby_accounts[res['groupby']][i][key] = res
-            elif key == 'initial_balance':
-                groupby_accounts.setdefault(res['groupby'], [{} for n in range(len(option_list))])
-                groupby_accounts[res['groupby']][i][key] = res
-            elif key == 'unaffected_earnings':
-                groupby_companies.setdefault(res['groupby'], [{} for n in range(len(option_list))])
-                groupby_companies[res['groupby']][i] = res
-            elif key == 'dimensionsum':
-                groupby_accounts.setdefault(res['groupby'], [{} for n in range(len(option_list))])
-                groupby_accounts[res['groupby']][i][key] = res
-        if groupby_companies:
-            candidates_accounts = self.env['account.account'].search([
-                ('account_type', '=', 'equity_unaffected'), ('company_id', 'in', list(groupby_companies.keys()))
-            ])
-            for account in candidates_accounts:
-                company_unaffected_earnings = groupby_companies.get(account.company_id.id)
-                if not company_unaffected_earnings:
-                    continue
-                for i in range(len(option_list)):
-                    unaffected_earnings = company_unaffected_earnings[i]
-                    groupby_accounts.setdefault(account.id, [{} for i in range(len(option_list))])
-                    groupby_accounts[account.id][i]['unaffected_earnings'] = unaffected_earnings
-                del groupby_companies[account.company_id.id]
-
-        AccountIds = []
-        AllAccounts = self.account_ids
-        FilteredAccountIds = AllAccounts.filtered(lambda a: a.temp_for_report)
-        for ids in FilteredAccountIds.ids:
-            ac = [i for i in list(groupby_accounts.keys())]
-            if ids in ac:
-                AccountIds.append(ids)
-        if not AccountIds:
-            for i in AllAccounts:
-                if i.id in list(groupby_accounts.keys()):
-                    AccountIds = [i for i in list(groupby_accounts.keys())]
-        if groupby_accounts:
-            accounts = self.env['account.account'].browse(AccountIds)
-        else:
-            accounts = []
-
-        if groupby_accounts:
-            accounts_results = [(account, groupby_accounts[account.id]) for account in accounts]
-        lines = []
-        totals = [0.0] * (2 * (len(option_list) + 2))
-        for account, periods_results in accounts_results:
-            sums = []
-            account_balance = 0.0
-            for i, period_values in enumerate(reversed(periods_results)):
-                account_sum = period_values.get('sum', {})
-                account_un_earn = period_values.get('unaffected_earnings', {})
-                account_init_bal = period_values.get('initial_balance', {})
-
-                if i == 0:
-                    initial_balance = account_init_bal.get('balance', 0.0) + account_un_earn.get('balance', 0.0)
-                    sums += [
-                        initial_balance > 0 and initial_balance or 0.0,
-                        initial_balance < 0 and -initial_balance or 0.0,
-                    ]
-                    account_balance += initial_balance
-
-                # Append the debit/credit columns.
-                sums += [
-                    account_sum.get('debit', 0.0) - account_init_bal.get('debit', 0.0),
-                    account_sum.get('credit', 0.0) - account_init_bal.get('credit', 0.0),
-                ]
-                account_balance += sums[-2] - sums[-1]
-
-            # Append the totals.
-            sums += [
-                account_balance > 0 and account_balance or 0.0,
-                account_balance < 0 and -account_balance or 0.0,
-            ]
-            # account.account report line.
-            columns = []
-            for i, value in enumerate(sums):
-                # Update totals.
-                totals[i] += value
-
-                # Create columns.
-                columns.append({'name': value, 'class': 'number', 'no_format_name': value})
-
-            name = account.name
-            code = account.code
-            if len(name) > 40 and not self._context.get('print_mode'):
-                name = name[:40]+'...'
-
-            lines.append({
-                'id': account.id,
-                'code': code,
-                'name': name,
-                'title_hover': name,
-                'columns': columns,
-                'unfoldable': False,
-                'caret_options': 'account.account',
-            })
-
-        # Total report line.
-        lines.append({
-             'id': 'grouped_accounts_total',
-             'code': 'group_code',
-             'name': _('Total'),
-             'class': 'total',
-             'columns': [{'name': total, 'class': 'number'} for total in totals],
-             'level': 1,
+            'unfolded_lines':group_list,
+            'date':{'string': string,'mode':'range','date_from': dateFrom.strftime('%Y-%m-%d'),'date_to':dateTo.strftime('%Y-%m-%d')},
+            'analytic_accounts': AnalyticIds,
+            'analytic_accounts_name':AnalyticNames,
+            'month_wise_dates': dates,
         })
-
-        accounts_hierarchy = {}
-        no_group_lines = []
-        for line in lines + [None]:
-           
-            is_grouped_by_account = line and (line.get('caret_options') == 'account.account' or line.get('account_id'))
-            if not is_grouped_by_account or not line:
-                no_group_hierarchy = {}
-                for no_group_line in no_group_lines:
-                    codes = [('root', str(line.get('parent_id')) or 'root') if line else 'root', (self.LEAST_SORT_PRIO, _('(No Group)'))]
-                    if not accounts_hierarchy:
-                        account = self.get_account(no_group_line.get('account_id', no_group_line.get('id')))
-                        codes = [('root', line and str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
-                    self.add_line_to_hierarchy(no_group_line, codes, no_group_hierarchy, line and line.get('level') or 0 + 1)
-                no_group_lines = []
-               
-                self.deep_merge_dict(no_group_hierarchy, accounts_hierarchy)
-                # Merge the newly created hierarchy with existing lines.
-                if accounts_hierarchy:
-                   
-                    new_lines += self.get_hierarchy_lines(accounts_hierarchy)[1]
-                   
-                    accounts_hierarchy = {}
-
-                if line:
-                    new_lines.append(line)
-
-                continue
-
-            # Exclude lines having no group.
-            account = self.get_account(line.get('account_id', line.get('id')))
-
-            if not account.group_id.id:
-                
-                no_group_lines.append(line)
-                continue
-            codes = [('root', str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
-            self.add_line_to_hierarchy(line, codes, accounts_hierarchy,line.get('level', 0) + 1)
-
-        net_balance = 0.0
-        for i in range(len(new_lines)):
-            acc_balance = new_lines[i]['columns']
-            listd = [list(c.values())[0] for c in acc_balance]
-            first = listd[4]
-            second = listd[5]
-            net_balance = first - second
-            acc_balance .append({'name':net_balance, 'class': 'number', 'no_format_name':net_balance})
-
-        for i in range(len(new_lines)):
-          if not self.show_dr_cr_separately:
-            new_lines[i]['columns']=new_lines[i]['columns'][2:]
-
-        if not self.account_without_transaction :
-            for val in new_lines:
-                v = 0.0 
-                acc_balance = val['columns']
-                for k in acc_balance:
-                    v +=list(k.values())[0]
-
-                if v == 0.0 or v == 0 :
-                    new_lines.remove(val)
-
-        return new_lines
-
-    @api.model
-    def default_get(self, fields):
-        vals = super(AccountTrialBalanceReport, self).default_get(fields)
-        ac_ids = self.env['account.account'].search([])
-        analytic_ids = self.env['account.analytic.account'].search([])
-        self.env.cr.execute('update account_account set temp_for_report=False')
-        self.env.cr.execute('update account_analytic_account set temp_analytic_report=False')
-        if 'account_ids' in fields and not vals.get('account_ids') and ac_ids:
-            iids = []
-            for ac_id in ac_ids:
-                iids.append(ac_id.id)
-            vals['account_ids'] = [(6, 0, iids)]
-        if 'analytic_account_ids' in fields and not vals.get('analytic_account_ids') and analytic_ids:
-            aniids = []
-            for ana_ac in analytic_ids:
-                aniids.append(ana_ac.id)
-            vals['analytic_account_ids'] = [(6, 0, aniids)]
-        return vals
-
-    def get_account(self,id):
-        accounts_cache = {}
-        if id not in accounts_cache:
-            accounts_cache[id] = self.env['account.account'].browse(id)
-        return accounts_cache[id]
-
-    def get_account_codes(self, account):
-        # A code is tuple(sort priority, actual code)
-        codes = []
-        # if not account:
-        #     continue
-        if account.group_id:
-            group = account.group_id
-            while group:
-                code = '%s %s' % (group.code_prefix_start or '', group.name)
-                codes.append((self.MOST_SORT_PRIO, code))
-                group = group.parent_id
-        else:
-            # Limit to 3 levels.
-            code = account.code[:3]
-            while code:
-                codes.append((self.MOST_SORT_PRIO, code))
-                code = code[:-1]
-        return list(reversed(codes))
-
-    MOST_SORT_PRIO = 0
-    LEAST_SORT_PRIO = 99
-
-    def merge_columns(self,columns):
-        return [('n/a' if any(i != '' for i in x) else '') if any(isinstance(i, str) for i in x) else sum(x) for x in zip(*columns)]
-            
-    def get_hierarchy_lines(self,values, depth=1):
-        
-            lines = []
-            sum_sum_columns = []
-            # unfold_all = self.env.context.get('print_mode') and len(options.get('unfolded_lines')) == 0
-            for base_line in values.get('lines', []):
-                lines.append(base_line)
-                sum_sum_columns.append([c.get('no_format_name', c['name']) for c in base_line['columns']])
-            
-            # For the last iteration, there might not be the children key (see add_line_to_hierarchy)
-            for key in sorted(values.get('children', {}).keys()):
-                sum_columns, sub_lines = self.get_hierarchy_lines(values['children'][key], depth=values['depth'])
-                
-                id = 'hierarchy_' + key[1]
-                acc_code = key[1].split(" ")[0]
-                header_line = {
-                    'id': id,
-                    'code':acc_code,
-                    'name': key[1] if len(key[1]) < 60 else key[1][:60] + '...',  # second member of the tuple
-                    'title_hover': key[1],
-                    'unfoldable': True,
-                    'level': values['depth'],
-                    'parent_id': values['parent_id'],
-                    'columns': [{'name': c if not isinstance(c, str) else c} for c in sum_columns],
-                }
-
-                if key[0] == self.LEAST_SORT_PRIO:
-                    header_line['style'] = 'font-style:italic;'
-                lines += [header_line] + sub_lines
-                sum_sum_columns.append(sum_columns)
-            return self.merge_columns(sum_sum_columns), lines
-
-    def add_line_to_hierarchy(self,line, codes, level_dict, depth=None):
-       
-        if not codes:
-            return
-        if not depth:
-            depth = line.get('level', 1)
-        level_dict.setdefault('depth', depth)
-        
-        level_dict.setdefault('parent_id', 'hierarchy_' + codes[0][1] if codes[0][0] != 'root' else codes[0][1])
-       
-        level_dict.setdefault('children', {})
-        
-        code = codes[1]
-        codes = codes[1:]
-        level_dict['children'].setdefault(code, {})
-       
-        if len(codes) > 1:
-            self.add_line_to_hierarchy(line, codes, level_dict['children'][code], depth=depth + 1)
-            
-        else:
-            level_dict['children'][code].setdefault('lines', [])
-           
-            level_dict['children'][code]['lines'].append(line)
-            
-            line['level'] = depth + 1
-            
-            for l in level_dict['children'][code]['lines']:
-                l['parent_id'] = 'hierarchy_' + code[1]
-
-    def deep_merge_dict(self, source, destination):
-        for key, value in source.items():
-            if isinstance(value, dict):
-                # get node or create one
-                node = destination.setdefault(key, {})
-                self.deep_merge_dict(value, node)
-            else:
-                destination[key] = value
-        return destination
-
-    def trial_balance_export_excel(self):
-        """
-        This methods make list of dict to Export in Dailybook Excel
-        """
-        new_lines = []
-        AccountGroupObj = self.env['account.group']
-        GroupIds = AccountGroupObj.search([])
-        dateFrom = self.date_from
-        dateTo = self.date_to
-        dates = {}
-        AllAnalyticAccounts = self.analytic_account_ids
-        FilteredAnalyticAccountIds = AllAnalyticAccounts.filtered(lambda a: a.temp_analytic_report)
-        AnalyticAccountIds = FilteredAnalyticAccountIds
-        AnalyticNames = []
-        AnalyticIds = []
-        if not AnalyticAccountIds:
-            AnalyticAccountIds = AllAnalyticAccounts
-        if self.dimension_wise_project == 'dimension':
-            AnalyticIds = [analytic_account.id for analytic_account in AnalyticAccountIds]
-            AnalyticNames = [analytic_account.name for analytic_account in AnalyticAccountIds]
-        if self.dimension_wise_project == 'month':
-               dates = {'date_from': dateFrom.strftime('%Y-%m-%d'),'date_to':dateTo.strftime('%Y-%m-%d')}
-        CompanyImage = self.env.company.logo
-        group_list = []
-        option_dict = {}
-        string = dateFrom.strftime('%Y')
-        Status = ['posted']
-        initial_balances = [True]  
-        accounts = []
-        for group_ids in GroupIds:
-            group_list.append(group_ids.name)
-        queries = []
-        option_dict.update({
-                            'unfolded_lines':group_list,
-                            'date':{'string': string,'mode':'range','date_from': dateFrom.strftime('%Y-%m-%d'),'date_to':dateTo.strftime('%Y-%m-%d')},
-                            'analytic_accounts': AnalyticIds,
-                            'analytic_accounts_name':AnalyticNames,
-                            'month_wise_dates': dates,
-                            })
 
         option_list = [option_dict]
 
@@ -587,20 +240,21 @@ class AccountTrialBalanceReport(models.TransientModel):
                 'unfoldable': False,
                 'caret_options': 'account.account',
             })
+
         # Total report line.
         lines.append({
-             'id': 'grouped_accounts_total',
-             'code': 'group_code',
-             'name': _('Total'),
-             'class': 'total',
-             'columns': [{'name': total, 'class': 'number'} for total in totals],
-             'level': 1,
+            'id': 'grouped_accounts_total',
+            'code': 'group_code',
+            'name': _('Total'),
+            'class': 'total',
+            'columns': [{'name': total, 'class': 'number'} for total in totals],
+            'level': 1,
         })
 
         accounts_hierarchy = {}
         no_group_lines = []
         for line in lines + [None]:
-           
+
             is_grouped_by_account = line and (line.get('caret_options') == 'account.account' or line.get('account_id'))
             if not is_grouped_by_account or not line:
                 no_group_hierarchy = {}
@@ -611,13 +265,363 @@ class AccountTrialBalanceReport(models.TransientModel):
                         codes = [('root', line and str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
                     self.add_line_to_hierarchy(no_group_line, codes, no_group_hierarchy, line and line.get('level') or 0 + 1)
                 no_group_lines = []
-               
+
                 self.deep_merge_dict(no_group_hierarchy, accounts_hierarchy)
                 # Merge the newly created hierarchy with existing lines.
                 if accounts_hierarchy:
-                   
+
                     new_lines += self.get_hierarchy_lines(accounts_hierarchy)[1]
-                   
+
+                    accounts_hierarchy = {}
+
+                if line:
+                    new_lines.append(line)
+
+                continue
+
+            # Exclude lines having no group.
+            account = self.get_account(line.get('account_id', line.get('id')))
+
+            if not account.group_id.id:
+
+                no_group_lines.append(line)
+                continue
+            codes = [('root', str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
+            self.add_line_to_hierarchy(line, codes, accounts_hierarchy,line.get('level', 0) + 1)
+
+        net_balance = 0.0
+        for i in range(len(new_lines)):
+            acc_balance = new_lines[i]['columns']
+            listd = [list(c.values())[0] for c in acc_balance]
+            first = listd[4]
+            second = listd[5]
+            net_balance = first - second
+            acc_balance .append({'name':net_balance, 'class': 'number', 'no_format_name':net_balance})
+
+        for i in range(len(new_lines)):
+            if not self.show_dr_cr_separately:
+                new_lines[i]['columns']=new_lines[i]['columns'][2:]
+
+        if not self.account_without_transaction :
+            for val in new_lines:
+                v = 0.0
+                acc_balance = val['columns']
+                for k in acc_balance:
+                    v +=list(k.values())[0]
+
+                if v == 0.0 or v == 0 :
+                    new_lines.remove(val)
+
+        return new_lines
+
+    @api.model
+    def default_get(self, fields):
+        vals = super(AccountTrialBalanceReport, self).default_get(fields)
+        ac_ids = self.env['account.account'].search([])
+        analytic_ids = self.env['account.analytic.account'].search([])
+        self.env.cr.execute('update account_account set temp_for_report=False')
+        self.env.cr.execute('update account_analytic_account set temp_analytic_report=False')
+        if 'account_ids' in fields and not vals.get('account_ids') and ac_ids:
+            iids = []
+            for ac_id in ac_ids:
+                iids.append(ac_id.id)
+            vals['account_ids'] = [(6, 0, iids)]
+        if 'analytic_account_ids' in fields and not vals.get('analytic_account_ids') and analytic_ids:
+            aniids = []
+            for ana_ac in analytic_ids:
+                aniids.append(ana_ac.id)
+            vals['analytic_account_ids'] = [(6, 0, aniids)]
+        return vals
+
+    def get_account(self,id):
+        accounts_cache = {}
+        if id not in accounts_cache:
+            accounts_cache[id] = self.env['account.account'].browse(id)
+        return accounts_cache[id]
+
+    def get_account_codes(self, account):
+        # A code is tuple(sort priority, actual code)
+        codes = []
+        # if not account:
+        #     continue
+        if account.group_id:
+            group = account.group_id
+            while group:
+                code = '%s %s' % (group.code_prefix_start or '', group.name)
+                codes.append((self.MOST_SORT_PRIO, code))
+                group = group.parent_id
+        else:
+            # Limit to 3 levels.
+            code = account.code[:3]
+            while code:
+                codes.append((self.MOST_SORT_PRIO, code))
+                code = code[:-1]
+        return list(reversed(codes))
+
+    MOST_SORT_PRIO = 0
+    LEAST_SORT_PRIO = 99
+
+    def merge_columns(self,columns):
+        return [('n/a' if any(i != '' for i in x) else '') if any(isinstance(i, str) for i in x) else sum(x) for x in zip(*columns)]
+
+    def get_hierarchy_lines(self,values, depth=1):
+
+        lines = []
+        sum_sum_columns = []
+        # unfold_all = self.env.context.get('print_mode') and len(options.get('unfolded_lines')) == 0
+        for base_line in values.get('lines', []):
+            lines.append(base_line)
+            sum_sum_columns.append([c.get('no_format_name', c['name']) for c in base_line['columns']])
+
+        # For the last iteration, there might not be the children key (see add_line_to_hierarchy)
+        for key in sorted(values.get('children', {}).keys()):
+            sum_columns, sub_lines = self.get_hierarchy_lines(values['children'][key], depth=values['depth'])
+
+            id = 'hierarchy_' + key[1]
+            acc_code = key[1].split(" ")[0]
+            header_line = {
+                'id': id,
+                'code':acc_code,
+                'name': key[1] if len(key[1]) < 60 else key[1][:60] + '...',  # second member of the tuple
+                'title_hover': key[1],
+                'unfoldable': True,
+                'level': values['depth'],
+                'parent_id': values['parent_id'],
+                'columns': [{'name': c if not isinstance(c, str) else c} for c in sum_columns],
+            }
+
+            if key[0] == self.LEAST_SORT_PRIO:
+                header_line['style'] = 'font-style:italic;'
+            lines += [header_line] + sub_lines
+            sum_sum_columns.append(sum_columns)
+        return self.merge_columns(sum_sum_columns), lines
+
+    def add_line_to_hierarchy(self,line, codes, level_dict, depth=None):
+
+        if not codes:
+            return
+        if not depth:
+            depth = line.get('level', 1)
+        level_dict.setdefault('depth', depth)
+
+        level_dict.setdefault('parent_id', 'hierarchy_' + codes[0][1] if codes[0][0] != 'root' else codes[0][1])
+
+        level_dict.setdefault('children', {})
+
+        code = codes[1]
+        codes = codes[1:]
+        level_dict['children'].setdefault(code, {})
+
+        if len(codes) > 1:
+            self.add_line_to_hierarchy(line, codes, level_dict['children'][code], depth=depth + 1)
+
+        else:
+            level_dict['children'][code].setdefault('lines', [])
+
+            level_dict['children'][code]['lines'].append(line)
+
+            line['level'] = depth + 1
+
+            for l in level_dict['children'][code]['lines']:
+                l['parent_id'] = 'hierarchy_' + code[1]
+
+    def deep_merge_dict(self, source, destination):
+        for key, value in source.items():
+            if isinstance(value, dict):
+                # get node or create one
+                node = destination.setdefault(key, {})
+                self.deep_merge_dict(value, node)
+            else:
+                destination[key] = value
+        return destination
+
+    def trial_balance_export_excel(self):
+        """
+        This methods make list of dict to Export in Dailybook Excel
+        """
+        new_lines = []
+        AccountGroupObj = self.env['account.group']
+        GroupIds = AccountGroupObj.search([])
+        dateFrom = self.date_from
+        dateTo = self.date_to
+        dates = {}
+        AllAnalyticAccounts = self.analytic_account_ids
+        FilteredAnalyticAccountIds = AllAnalyticAccounts.filtered(lambda a: a.temp_analytic_report)
+        AnalyticAccountIds = FilteredAnalyticAccountIds
+        AnalyticNames = []
+        AnalyticIds = []
+        if not AnalyticAccountIds:
+            AnalyticAccountIds = AllAnalyticAccounts
+        if self.dimension_wise_project == 'dimension':
+            AnalyticIds = [analytic_account.id for analytic_account in AnalyticAccountIds]
+            AnalyticNames = [analytic_account.name for analytic_account in AnalyticAccountIds]
+        if self.dimension_wise_project == 'month':
+            dates = {'date_from': dateFrom.strftime('%Y-%m-%d'),'date_to':dateTo.strftime('%Y-%m-%d')}
+        CompanyImage = self.env.company.logo
+        group_list = []
+        option_dict = {}
+        string = dateFrom.strftime('%Y')
+        Status = ['posted']
+        initial_balances = [True]
+        accounts = []
+        for group_ids in GroupIds:
+            group_list.append(group_ids.name)
+        queries = []
+        option_dict.update({
+            'unfolded_lines':group_list,
+            'date':{'string': string,'mode':'range','date_from': dateFrom.strftime('%Y-%m-%d'),'date_to':dateTo.strftime('%Y-%m-%d')},
+            'analytic_accounts': AnalyticIds,
+            'analytic_accounts_name':AnalyticNames,
+            'month_wise_dates': dates,
+        })
+
+        option_list = [option_dict]
+
+        query, params = self.get_all_queries(option_list)
+        groupby_accounts = {}
+        groupby_companies = {}
+        groupby_taxes = {}
+
+        self._cr.execute(query, params)
+        for res in self.env.cr.dictfetchall():
+
+            if res['groupby'] is None:
+                continue
+
+            i = res['period_number']
+            key = res['key']
+            if key == 'sum':
+                groupby_accounts.setdefault(res['groupby'], [{} for n in range(len(option_list))])
+                groupby_accounts[res['groupby']][i][key] = res
+            elif key == 'initial_balance':
+                groupby_accounts.setdefault(res['groupby'], [{} for n in range(len(option_list))])
+                groupby_accounts[res['groupby']][i][key] = res
+            elif key == 'unaffected_earnings':
+                groupby_companies.setdefault(res['groupby'], [{} for n in range(len(option_list))])
+                groupby_companies[res['groupby']][i] = res
+            elif key == 'dimensionsum':
+                groupby_accounts.setdefault(res['groupby'], [{} for n in range(len(option_list))])
+                groupby_accounts[res['groupby']][i][key] = res
+        if groupby_companies:
+            candidates_accounts = self.env['account.account'].search([
+                ('account_type', '=', 'equity_unaffected'), ('company_ids', 'in', list(groupby_companies.keys()))
+            ])
+            for account in candidates_accounts:
+                for company in account.company_ids:  # loop over all companies linked to this account
+                    company_unaffected_earnings = groupby_companies.get(company.id)
+                    if not company_unaffected_earnings:
+                        continue
+
+                    for i in range(len(option_list)):
+                        unaffected_earnings = company_unaffected_earnings[i]
+                        groupby_accounts.setdefault(account.id, [{} for _ in range(len(option_list))])
+                        groupby_accounts[account.id][i]['unaffected_earnings'] = unaffected_earnings
+
+                    # remove processed company to avoid duplicates
+                    del groupby_companies[company.id]
+
+        AccountIds = []
+        AllAccounts = self.account_ids
+        FilteredAccountIds = AllAccounts.filtered(lambda a: a.temp_for_report)
+        for ids in FilteredAccountIds.ids:
+            ac = [i for i in list(groupby_accounts.keys())]
+            if ids in ac:
+                AccountIds.append(ids)
+        if not AccountIds:
+            for i in AllAccounts:
+                if i.id in list(groupby_accounts.keys()):
+                    AccountIds = [i for i in list(groupby_accounts.keys())]
+        if groupby_accounts:
+            accounts = self.env['account.account'].browse(AccountIds)
+        else:
+            accounts = []
+
+        if groupby_accounts:
+            accounts_results = [(account, groupby_accounts[account.id]) for account in accounts]
+        lines = []
+        totals = [0.0] * (2 * (len(option_list) + 2))
+        for account, periods_results in accounts_results:
+            sums = []
+            account_balance = 0.0
+            for i, period_values in enumerate(reversed(periods_results)):
+                account_sum = period_values.get('sum', {})
+                account_un_earn = period_values.get('unaffected_earnings', {})
+                account_init_bal = period_values.get('initial_balance', {})
+
+                if i == 0:
+                    initial_balance = account_init_bal.get('balance', 0.0) + account_un_earn.get('balance', 0.0)
+                    sums += [
+                        initial_balance > 0 and initial_balance or 0.0,
+                        initial_balance < 0 and -initial_balance or 0.0,
+                        ]
+                    account_balance += initial_balance
+
+                # Append the debit/credit columns.
+                sums += [
+                    account_sum.get('debit', 0.0) - account_init_bal.get('debit', 0.0),
+                    account_sum.get('credit', 0.0) - account_init_bal.get('credit', 0.0),
+                    ]
+                account_balance += sums[-2] - sums[-1]
+
+            # Append the totals.
+            sums += [
+                account_balance > 0 and account_balance or 0.0,
+                account_balance < 0 and -account_balance or 0.0,
+                ]
+            # account.account report line.
+            columns = []
+            for i, value in enumerate(sums):
+                # Update totals.
+                totals[i] += value
+
+                # Create columns.
+                columns.append({'name': value, 'class': 'number', 'no_format_name': value})
+
+            name = account.name
+            code = account.code
+            if len(name) > 40 and not self._context.get('print_mode'):
+                name = name[:40]+'...'
+
+            lines.append({
+                'id': account.id,
+                'code': code,
+                'name': name,
+                'title_hover': name,
+                'columns': columns,
+                'unfoldable': False,
+                'caret_options': 'account.account',
+            })
+        # Total report line.
+        lines.append({
+            'id': 'grouped_accounts_total',
+            'code': 'group_code',
+            'name': _('Total'),
+            'class': 'total',
+            'columns': [{'name': total, 'class': 'number'} for total in totals],
+            'level': 1,
+        })
+
+        accounts_hierarchy = {}
+        no_group_lines = []
+        for line in lines + [None]:
+
+            is_grouped_by_account = line and (line.get('caret_options') == 'account.account' or line.get('account_id'))
+            if not is_grouped_by_account or not line:
+                no_group_hierarchy = {}
+                for no_group_line in no_group_lines:
+                    codes = [('root', str(line.get('parent_id')) or 'root') if line else 'root', (self.LEAST_SORT_PRIO, _('(No Group)'))]
+                    if not accounts_hierarchy:
+                        account = self.get_account(no_group_line.get('account_id', no_group_line.get('id')))
+                        codes = [('root', line and str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
+                    self.add_line_to_hierarchy(no_group_line, codes, no_group_hierarchy, line and line.get('level') or 0 + 1)
+                no_group_lines = []
+
+                self.deep_merge_dict(no_group_hierarchy, accounts_hierarchy)
+                # Merge the newly created hierarchy with existing lines.
+                if accounts_hierarchy:
+
+                    new_lines += self.get_hierarchy_lines(accounts_hierarchy)[1]
+
                     accounts_hierarchy = {}
 
                 if line:
@@ -628,12 +632,12 @@ class AccountTrialBalanceReport(models.TransientModel):
             # Exclude lines having no group.
             account = self.get_account(line.get('account_id', line.get('id')))
             if not account.group_id.id:
-                
+
                 no_group_lines.append(line)
                 continue
             codes = [('root', str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
             self.add_line_to_hierarchy(line, codes, accounts_hierarchy,line.get('level', 0) + 1)
-        
+
         filename = 'Trial Balance.xls'
         start = dateFrom.strftime('%d %b, %Y')
         end = dateTo.strftime('%d %b, %Y')
@@ -651,17 +655,17 @@ class AccountTrialBalanceReport(models.TransientModel):
         workbook.set_colour_RGB(0x21, 105, 105, 105)
 
         xlwt.add_palette_colour("dark_blue", 0x3A)
-        workbook.set_colour_RGB(0x3A, 0,0,139)  
+        workbook.set_colour_RGB(0x3A, 0,0,139)
 
         xlwt.add_palette_colour("gainsboro", 0x15)
-        workbook.set_colour_RGB(0x15,205,205,205)  
+        workbook.set_colour_RGB(0x15,205,205,205)
 
         worksheet = workbook.add_sheet("Trial Balance", cell_overwrite_ok=True)
         worksheet.show_grid = False
 
         styleheader = xlwt.easyxf('font: bold 1, colour black, height 300;')
-        
-        
+
+
         stylecolaccount = xlwt.easyxf('font: bold 1, colour white, height 200; \
                                       pattern: pattern solid, fore_colour dark_blue; \
                                       align: vert centre, horiz centre; \
@@ -677,7 +681,7 @@ class AccountTrialBalanceReport(models.TransientModel):
         general = xlwt.easyxf('font: bold 1, colour black, height 210;')
 
         dateheader = xlwt.easyxf('font: bold 1, colour black, height 200;')
-       
+
         mainheaderdata = xlwt.easyxf('borders: top_color black, bottom_color black, right_color black, left_color black,\
                               left thin, right thin, top thin, bottom thin; align: horiz left;',)
 
@@ -709,12 +713,12 @@ class AccountTrialBalanceReport(models.TransientModel):
         #HEADER
         worksheet.row(4).height_mismatch = True
         worksheet.row(4).height = 360
-        
+
         worksheet.write_merge(0, 1, 2, 5, self.env.company.name,styleheader)
         worksheet.write_merge(2, 2, 2, 5, 'Trial Balance',general)
         headerstring = 'From :' + str(self.date_from.strftime('%d %b %Y') or '') + ' To :' + str(self.date_to.strftime('%d %b %Y') or '')
         worksheet.write_merge(3, 3, 2, 5, headerstring,dateheader)
-        
+
         dimension_res = ''
         month_res = ''
         if self.dimension_wise_project == 'dimension' :
@@ -722,7 +726,7 @@ class AccountTrialBalanceReport(models.TransientModel):
 
         if self.dimension_wise_project == 'month' :
             month_res = self.get_monthwise_data(option_list,lines)
-       
+
         #SUB-HEADER
         ColIndexes = {}
         row = 4
@@ -788,7 +792,7 @@ class AccountTrialBalanceReport(models.TransientModel):
         Analyticvals = []
         final_list = []
         MonthVals = []
-       
+
         for analytic in AnalyticNames:
             Analyticvals.append({analytic:0, 'class': 'number', 'no_format_name':0.0})
 
@@ -813,7 +817,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                 new_lines[i]['project'] = Analyticvals
             if self.dimension_wise_project == 'month':
                 new_lines[i]['month'] = MonthVals
-              
+
         if self.dimension_wise_project == 'dimension':
             for i in range(len(new_lines)):
                 for dim in range(len(dimension_res)):
@@ -825,7 +829,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                 for dim in range(len(month_res)):
                     if month_res[dim]['account_code'] == new_lines[i]['code']:
                         new_lines[i]['month'] = month_res[dim]['columns']
-                       
+
         if not self.account_without_transaction :
             for i in range(len(new_lines)):
                 v = 0
@@ -845,7 +849,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                     code = ''
                     if not new_lines[i].get('code'):
                         name = new_lines[i]['name']
-                        if isinstance(new_lines[i]['id'], int):              
+                        if isinstance(new_lines[i]['id'], int):
                             worksheet.write(row, 0,'', mainheaderdata)
                             # col+=1
                             worksheet.write(row, 1 , name, mainheaderdata)
@@ -853,7 +857,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                             for j in range(len(acc_balance)):
                                 if acc_balance[j]['name'] == 0.0:
                                     worksheet.write(row, col, 00.0, mainheaderdata)
-                                else:    
+                                else:
                                     worksheet.write(row, col, round((acc_balance[j]['name']),2), mainheaderdata)
                                 col+=1
                             if self.dimension_wise_project == 'dimension':
@@ -876,7 +880,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                                 if self.show_dr_cr_separately:
                                     col = 9
                                     for j in range(len(months)):
-                                        
+
                                         worksheet.write(row, col,round((list(months[j].values())[0]),2), mainheaderdata)
                                         col+=1
                                     row+=1
@@ -897,7 +901,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                             for j in range(len(acc_balance)):
                                 if acc_balance[j]['name'] == 0.0:
                                     worksheet.write(row, col, 00.0, mainheaders)
-                                else:    
+                                else:
                                     worksheet.write(row, col, round((acc_balance[j]['name']),2), mainheaders)
                                 col+=1
                             if self.dimension_wise_project == 'dimension':
@@ -943,7 +947,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                             for j in range(len(acc_balance)):
                                 if acc_balance[j]['name'] == 0.0:
                                     worksheet.write(row, col, 00.0, mainheaderdata)
-                                else:    
+                                else:
                                     worksheet.write(row, col, round((acc_balance[j]['name']),2), mainheaderdata)
                                 col+=1
                             if self.dimension_wise_project == 'dimension':
@@ -985,7 +989,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                             for j in range(len(acc_balance)):
                                 if acc_balance[j]['name'] == 0.0:
                                     worksheet.write(row, col, 00.0, mainheaders)
-                                else:    
+                                else:
                                     worksheet.write(row, col, round((acc_balance[j]['name']),2), mainheaders)
                                 col+=1
                             if self.dimension_wise_project == 'dimension':
@@ -1019,7 +1023,7 @@ class AccountTrialBalanceReport(models.TransientModel):
 
                             else:
                                 row+=1
-                  
+
         else:
             for i in range(len(new_lines)):
                 acc_balance = new_lines[i]['columns']
@@ -1027,12 +1031,12 @@ class AccountTrialBalanceReport(models.TransientModel):
                     acc_balance = acc_balance
                 else:
                     acc_balance = acc_balance[2:]
-                
+
                 name = ''
                 code = ''
                 if not new_lines[i].get('code'):
                     name = new_lines[i]['name']
-                    if isinstance(new_lines[i]['id'], int):           
+                    if isinstance(new_lines[i]['id'], int):
                         worksheet.write(row, 0,'', mainheaderdata)
                         # col+=1
                         worksheet.write(row, 1 , name, mainheaderdata)
@@ -1082,7 +1086,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                         for j in range(len(acc_balance)):
                             if acc_balance[j]['name'] == 0.0:
                                 worksheet.write(row, col, 00.0, mainheaders)
-                            else:    
+                            else:
                                 worksheet.write(row, col, round((acc_balance[j]['name']),2), mainheaders)
                             col+=1
                         if self.dimension_wise_project == 'dimension':
@@ -1122,13 +1126,13 @@ class AccountTrialBalanceReport(models.TransientModel):
                     name = new_lines[i]['name'].replace(new_lines[i]['code'],"")
                     code = new_lines[i]['code']
                     if isinstance(new_lines[i]['id'], int):
-                        worksheet.write(row, 0,new_lines[i]['code'], mainheaderdata) 
+                        worksheet.write(row, 0,new_lines[i]['code'], mainheaderdata)
                         worksheet.write(row, 1, name, mainheaderdata)
                         col = 2
                         for j in range(len(acc_balance)):
                             if acc_balance[j]['name'] == 0.0:
                                 worksheet.write(row, col, 00.0, mainheaderdata)
-                            else:    
+                            else:
                                 worksheet.write(row, col, round((acc_balance[j]['name']),2), mainheaderdata)
                             col+=1
                         if self.dimension_wise_project == 'dimension':
@@ -1170,10 +1174,10 @@ class AccountTrialBalanceReport(models.TransientModel):
                         for j in range(len(acc_balance)):
                             if acc_balance[j]['name'] == 0.0 or acc_balance[j]['name'] == 0:
                                 worksheet.write(row, col, 00.0, mainheaders)
-                            else:    
+                            else:
                                 worksheet.write(row, col, round((acc_balance[j]['name']),2), mainheaders)
                             col+=1
-                            
+
                         if self.dimension_wise_project == 'dimension':
                             projects = new_lines[i]['project']
                             if self.show_dr_cr_separately:
@@ -1211,9 +1215,9 @@ class AccountTrialBalanceReport(models.TransientModel):
         buffer = io.BytesIO()
         workbook.save(buffer)
         export_id = self.env['trial.balance.excel'].create(
-                        {'excel_file': base64.encodebytes(buffer.getvalue()), 'file_name': filename})
+            {'excel_file': base64.encodebytes(buffer.getvalue()), 'file_name': filename})
         buffer.close()
-    
+
         return {
             'name': form_name,
             'view_mode': 'form',
@@ -1232,7 +1236,7 @@ class AccountTrialBalanceReport(models.TransientModel):
             'date_from': fiscalyear_dates['date_from'].strftime('%Y-%m-%d'),
             'date_to': options['date']['date_to'],
         }
-        return new_options    
+        return new_options
 
     @api.model
     def get_options_unaffected_earnings(self, options):
@@ -1255,7 +1259,7 @@ class AccountTrialBalanceReport(models.TransientModel):
             'date_from': fiscalyear_dates['date_from'].strftime('%Y-%m-%d'),
             'date_to': new_date_to.strftime('%Y-%m-%d'),
         }
-        return new_options    
+        return new_options
     @api.model
     def get_options_date_domain(self, options):
         def create_date_domain(options_date):
@@ -1278,16 +1282,20 @@ class AccountTrialBalanceReport(models.TransientModel):
 
         if not options.get('date'):
             return []
-        return create_date_domain(options['date']) 
+        return create_date_domain(options['date'])
 
     @api.model
     def query_get(self, options, domain=None):
         domain = self.get_options_date_domain(options) + (domain or [])
-        self.env['account.move.line'].check_access_rights('read')
+        self.env['account.move.line'].check_access('read')
         query = self.env['account.move.line']._where_calc(domain)
         # Wrap the query with 'company_id IN (...)' to avoid bypassing company access rights.
         self.env['account.move.line']._apply_ir_rules(query)
-        return query.get_sql()               
+
+        from_string, from_params = query.from_clause
+        where_string, where_params = query.where_clause
+
+        return from_string, where_string, from_params + where_params
 
     def get_all_queries(self,option_list,expanded_account=None):
         queries = []
@@ -1335,7 +1343,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                 WHERE %s
                 GROUP BY account_move_line.account_id
             ''' % (i, tables, ct_query, where_clause))
-           
+
         # ============================================
         # 2) Get sums for the unaffected earnings.
         # ============================================
@@ -1395,7 +1403,7 @@ class AccountTrialBalanceReport(models.TransientModel):
         return ' UNION ALL '.join(queries), params
 
     def get_dimesnsion_hierarchy_lines(self,values, depth=1):
-        
+
         lines = []
         sum_sum_columns = []
         sum_name_coumns = []
@@ -1404,10 +1412,10 @@ class AccountTrialBalanceReport(models.TransientModel):
             lines.append(base_line)
 
             sum_sum_columns.append([c.get('no_format_name',list(c.values())[0]) for c in base_line['columns']])
-        
+
         # For the last iteration, there might not be the children key (see add_line_to_hierarchy)
         for key in sorted(values.get('children', {}).keys()):
-            
+
             sum_columns, sub_lines = self.get_dimesnsion_hierarchy_lines(values['children'][key], depth=values['depth'])
             sum_columns_bal = [c if not isinstance(c, str) else c for c in sum_columns]
             AnalyticAccount = self.analytic_account_ids
@@ -1452,11 +1460,11 @@ class AccountTrialBalanceReport(models.TransientModel):
                         codes = [('root', line and str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
                     self.add_line_to_hierarchy(no_group_line, codes, no_group_hierarchy, line and line.get('level') or 0 + 1)
                 no_group_lines = []
-                
+
                 self.deep_merge_dict(no_group_hierarchy, accounts_hierarchy)
                 # Merge the newly created hierarchy with existing lines.
                 if accounts_hierarchy:
-                   
+
                     new_lines += self.get_dimesnsion_hierarchy_lines(accounts_hierarchy)[1]
                     # new_dimension_list.append(new_lines)
                     accounts_hierarchy = {}
@@ -1471,10 +1479,10 @@ class AccountTrialBalanceReport(models.TransientModel):
                 no_group_lines.append(line)
                 continue
             codes = [('root', str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
-          
+
             self.add_line_to_hierarchy(line, codes, accounts_hierarchy,line.get('level', 0) + 1)
         return new_lines
-        
+
     def get_month_hierarchy_lines(self,values, depth=1):
         lines = []
         sum_sum_columns = []
@@ -1484,13 +1492,13 @@ class AccountTrialBalanceReport(models.TransientModel):
             lines.append(base_line)
 
             sum_sum_columns.append([c.get('no_format_name',list(c.values())[0]) for c in base_line['columns']])
-        
+
         # For the last iteration, there might not be the children key (see add_line_to_hierarchy)
         for key in sorted(values.get('children', {}).keys()):
-            
+
             sum_columns, sub_lines = self.get_month_hierarchy_lines(values['children'][key], depth=values['depth'])
             sum_columns_bal = [c if not isinstance(c, str) else c for c in sum_columns]
-            
+
             fetch_monthwise_data = []
             cur_date = self.date_from
             end = self.date_to
@@ -1565,7 +1573,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                 no_group_lines.append(line)
                 continue
             codes = [('root', str(line.get('parent_id')) or 'root')] + self.get_account_codes(account)
-          
+
             self.add_line_to_hierarchy(line, codes, accounts_hierarchy,line.get('level', 0) + 1)
         return new_lines
 
@@ -1594,72 +1602,94 @@ class AccountTrialBalanceReport(models.TransientModel):
                        aa.name->>'en_US' as analytic,
                        aml.account_id as account_id,
                        a.name->>'en_US' as account_name,
-                       a.group_id as group_id,
+                       ag.id as group_id,
                        ag.name->>'en_US' as group_name,
                        ag.code_prefix_start as group_code,
-                       a.code as account_code,
+                       (a.code_store->>'en_US') as account_code,
                        aml.id as movelineid
                 FROM account_move_line aml
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (aml.account_id=a.id)
-                LEFT JOIN account_group ag ON (a.group_id=ag.id)
-                
+
+                -- Replicate group_id compute logic:
+                LEFT JOIN LATERAL (
+                    SELECT ag2.id, ag2.name, ag2.code_prefix_start
+                    FROM account_group ag2
+                    WHERE ag2.code_prefix_start <= LEFT((a.code_store->>'en_US'), char_length(ag2.code_prefix_start))
+                      AND ag2.code_prefix_end   >= LEFT((a.code_store->>'en_US'), char_length(ag2.code_prefix_end))
+                      AND ag2.company_id = %s
+                    ORDER BY char_length(ag2.code_prefix_start) DESC, ag2.id
+                    LIMIT 1
+                ) ag ON true
+
+                -- Handle analytic distribution
                 LEFT JOIN LATERAL (
                     SELECT (regexp_matches(jsonb_object_keys(aml.analytic_distribution), '\\d+', 'g'))[1]::int as analytic_key
                     FROM jsonb_each_text(aml.analytic_distribution)
                 ) ak ON true
                 LEFT JOIN account_analytic_account aa ON ak.analytic_key = aa.id
-                
-                WHERE (aml.date >= %s) AND
-                    (aml.date <= %s) AND
-                    (aml.account_id in %s) AND
-                    (ak.analytic_key in %s) AND
-                    (am.state in %s) ORDER BY aml.account_id""",
-                (str(dateFrom) + ' 00:00:00', str(dateTo) + ' 23:59:59', tuple(AccountId),tuple(AnalyticAccountIds), tuple(Status),))
+
+                WHERE (aml.date >= %s)
+                  AND (aml.date <= %s)
+                  AND (aml.account_id in %s)
+                  AND (ak.analytic_key in %s)
+                  AND (am.state in %s)
+                ORDER BY aml.account_id
+                """,
+                                (
+                                    self.env.company.root_id.id,  # root company id
+                                    str(dateFrom) + ' 00:00:00',
+                                    str(dateTo) + ' 23:59:59',
+                                    tuple(AccountId),
+                                    tuple(AnalyticAccountIds),
+                                    tuple(Status),
+                                )
+                                )
             MoveLineIds = self.env.cr.fetchall()
+
         if MoveLineIds:
-                for ml in MoveLineIds:
-                    date = ml[0]
-                    acount_debit = ml[1]
-                    account_credit = ml[2]
-                    analytic_account_id = ml[3]
-                    account_id = ml[4]
-                    account_name = ml[5]
-                    group_id = ml[6]
-                    group_name = ml[7]
-                    group_code = ml[8]
-                    account_code = ml[9]
-                    Balance = 0.0
-                    Balance = Balance + (acount_debit - account_credit)
-                    Vals = {
-                            'account_id':account_id,
-                            'account_name':account_name,
-                            'group_id':group_id,
-                            'group_name':group_name,
-                            'group_code':group_code,                      
-                            'balance': Balance or 0.0,
-                            'account_debit':acount_debit,
-                            'account_credit':account_credit,
-                            'analytic_account_id':analytic_account_id,
-                            'date':date,
-                            'account_code':account_code,
-                            }   
-                    mainDict.append(Vals)
-        
+            for ml in MoveLineIds:
+                date = ml[0]
+                acount_debit = ml[1]
+                account_credit = ml[2]
+                analytic_account_id = ml[3]
+                account_id = ml[4]
+                account_name = ml[5]
+                group_id = ml[6]
+                group_name = ml[7]
+                group_code = ml[8]
+                account_code = ml[9]
+                Balance = 0.0
+                Balance = Balance + (acount_debit - account_credit)
+                Vals = {
+                    'account_id':account_id,
+                    'account_name':account_name,
+                    'group_id':group_id,
+                    'group_name':group_name,
+                    'group_code':group_code,
+                    'balance': Balance or 0.0,
+                    'account_debit':acount_debit,
+                    'account_credit':account_credit,
+                    'analytic_account_id':analytic_account_id,
+                    'date':date,
+                    'account_code':account_code,
+                }
+                mainDict.append(Vals)
+
         for i in range(0,len(mainDict)):
             if (mainDict[i]['account_name'],mainDict[i]['analytic_account_id']) not in account_list:
                 main_list.append({
-                                  'id':mainDict[i]['account_id'],
-                                  'account_name':mainDict[i]['account_name'],
-                                  'group_id':mainDict[i]['group_id'],
-                                  'group_name':mainDict[i]['group_name'],
-                                  'group_code': mainDict[i]['group_code'],
-                                  'analytic_account_id':mainDict[i]['analytic_account_id'],
-                                  'debit': mainDict[i]['account_debit'],
-                                  'credit': mainDict[i]['account_credit'],
-                                  'account_code': mainDict[i]['account_code'],
-                                  'balance': mainDict[i]['account_debit'] - mainDict[i]['account_credit'] or 00.00,
-                                  })
+                    'id':mainDict[i]['account_id'],
+                    'account_name':mainDict[i]['account_name'],
+                    'group_id':mainDict[i]['group_id'],
+                    'group_name':mainDict[i]['group_name'],
+                    'group_code': mainDict[i]['group_code'],
+                    'analytic_account_id':mainDict[i]['analytic_account_id'],
+                    'debit': mainDict[i]['account_debit'],
+                    'credit': mainDict[i]['account_credit'],
+                    'account_code': mainDict[i]['account_code'],
+                    'balance': mainDict[i]['account_debit'] - mainDict[i]['account_credit'] or 00.00,
+                })
                 account_list.append((mainDict[i]['account_name'],mainDict[i]['analytic_account_id']))
             else:
                 first_list.append({
@@ -1730,12 +1760,12 @@ class AccountTrialBalanceReport(models.TransientModel):
         finalbalancedict = [{k: v, 'class': 'number', 'no_format_name': v} for k, v in total_balance_list.items()]
 
         new_list.append({
-             'id': 'grouped_accounts_total',
-             'account_code': 'group_code',
-             'name': _('Total'),
-             'class': 'total',
-             'columns': finalbalancedict,
-             'level': 1,
+            'id': 'grouped_accounts_total',
+            'account_code': 'group_code',
+            'name': _('Total'),
+            'class': 'total',
+            'columns': finalbalancedict,
+            'level': 1,
         })
         return self.dimension_group_line_calculation(new_list)
 
@@ -1763,22 +1793,42 @@ class AccountTrialBalanceReport(models.TransientModel):
                        aml.credit as credit,
                        aml.account_id as account_id,
                        a.name->>'en_US' as account_name,
-                       a.group_id as group_id,
+                       ag.id as group_id,
                        ag.name->>'en_US' as group_name,
                        ag.code_prefix_start as group_code,
-                       a.code as account_code,
+                       a.code_store->>'en_US' as account_code,
                        aml.id as movelineid
                 FROM account_move_line aml
                 LEFT JOIN account_move am ON (am.id=aml.move_id)
                 LEFT JOIN account_account a ON (aml.account_id=a.id)
-                LEFT JOIN account_group ag ON (a.group_id=ag.id)
-                WHERE (aml.date >= %s) AND
-                    (aml.date <= %s) AND
-                    (aml.account_id in %s) AND
-                    (am.state in %s) ORDER BY aml.account_id""",
-                (str(dateFrom) + ' 00:00:00', str(dateTo) + ' 23:59:59', tuple(AccountId),tuple(Status),))
+
+                -- Replicate group_id compute logic
+                LEFT JOIN LATERAL (
+                    SELECT ag2.id, ag2.name, ag2.code_prefix_start
+                    FROM account_group ag2
+                    WHERE ag2.code_prefix_start <= LEFT((a.code_store->>'en_US'), char_length(ag2.code_prefix_start))
+                      AND ag2.code_prefix_end   >= LEFT((a.code_store->>'en_US'), char_length(ag2.code_prefix_end))
+                      AND ag2.company_id = %s
+                    ORDER BY char_length(ag2.code_prefix_start) DESC, ag2.id
+                    LIMIT 1
+                ) ag ON true
+
+                WHERE (aml.date >= %s)
+                  AND (aml.date <= %s)
+                  AND (aml.account_id in %s)
+                  AND (am.state in %s)
+                ORDER BY aml.account_id
+                """,
+                                (
+                                    self.env.company.root_id.id,  # root company id for group matching
+                                    str(dateFrom) + ' 00:00:00',
+                                    str(dateTo) + ' 23:59:59',
+                                    tuple(AccountId),
+                                    tuple(Status),
+                                )
+                                )
             MoveLineIds = self.env.cr.fetchall()
-        
+
         if MoveLineIds:
             for ml in MoveLineIds:
                 date = ml[0]
@@ -1793,48 +1843,48 @@ class AccountTrialBalanceReport(models.TransientModel):
                 Balance = 0.0
                 Balance = Balance + (acount_debit - account_credit)
                 Vals = {
-                        'account_id':account_id,
-                        'account_name':account_name,
-                        'group_id':group_id,
-                        'group_name':group_name,
-                        'group_code':group_code,                      
-                        'balance': Balance or 0.0,
-                        'account_debit':acount_debit,
-                        'account_credit':account_credit,
-                        'date':date,
-                        'account_code':account_code,
-                        }   
+                    'account_id':account_id,
+                    'account_name':account_name,
+                    'group_id':group_id,
+                    'group_name':group_name,
+                    'group_code':group_code,
+                    'balance': Balance or 0.0,
+                    'account_debit':acount_debit,
+                    'account_credit':account_credit,
+                    'date':date,
+                    'account_code':account_code,
+                }
                 mainDict.append(Vals)
 
         for i in range(0,len(mainDict)):
             if (mainDict[i]['account_name'],mainDict[i]['date'].strftime("%b %y")) not in account_list:
                 main_list.append({
-                                  'id':mainDict[i]['account_id'],
-                                  'account_name':mainDict[i]['account_name'],
-                                  'account_code': mainDict[i]['account_code'],
-                                  'group_id':mainDict[i]['group_id'],
-                                  'group_name':mainDict[i]['group_name'],
-                                  'group_code': mainDict[i]['group_code'],
-                                  'debit': mainDict[i]['account_debit'],
-                                  'credit': mainDict[i]['account_credit'],
-                                  'balance': mainDict[i]['account_debit'] - mainDict[i]['account_credit'] or 00.00,
-                                  'month': mainDict[i]['date'].strftime("%b %y")                   
-                                  })
+                    'id':mainDict[i]['account_id'],
+                    'account_name':mainDict[i]['account_name'],
+                    'account_code': mainDict[i]['account_code'],
+                    'group_id':mainDict[i]['group_id'],
+                    'group_name':mainDict[i]['group_name'],
+                    'group_code': mainDict[i]['group_code'],
+                    'debit': mainDict[i]['account_debit'],
+                    'credit': mainDict[i]['account_credit'],
+                    'balance': mainDict[i]['account_debit'] - mainDict[i]['account_credit'] or 00.00,
+                    'month': mainDict[i]['date'].strftime("%b %y")
+                })
 
-                account_list.append((mainDict[i]['account_name'],mainDict[i]['date'].strftime("%b %y")))     
+                account_list.append((mainDict[i]['account_name'],mainDict[i]['date'].strftime("%b %y")))
             else:
                 first_list.append({
-                                  'id':mainDict[i]['account_id'],
-                                  'account_name':mainDict[i]['account_name'],
-                                  'account_code': mainDict[i]['account_code'],
-                                  'group_id':mainDict[i]['group_id'],
-                                  'group_name':mainDict[i]['group_name'],
-                                  'group_code': mainDict[i]['group_code'],
-                                  'debit': mainDict[i]['account_debit'],
-                                  'credit': mainDict[i]['account_credit'],
-                                  'balance': mainDict[i]['account_debit'] - mainDict[i]['account_credit'] or 00.00,
-                                  'month': mainDict[i]['date'].strftime("%b %y")
-                                  })
+                    'id':mainDict[i]['account_id'],
+                    'account_name':mainDict[i]['account_name'],
+                    'account_code': mainDict[i]['account_code'],
+                    'group_id':mainDict[i]['group_id'],
+                    'group_name':mainDict[i]['group_name'],
+                    'group_code': mainDict[i]['group_code'],
+                    'debit': mainDict[i]['account_debit'],
+                    'credit': mainDict[i]['account_credit'],
+                    'balance': mainDict[i]['account_debit'] - mainDict[i]['account_credit'] or 00.00,
+                    'month': mainDict[i]['date'].strftime("%b %y")
+                })
         if mainDict:
             for j in range(0,len(main_list)):
                 for k in range(0,len(first_list)):
@@ -1848,7 +1898,7 @@ class AccountTrialBalanceReport(models.TransientModel):
             if main_list[i]['id'] not in second_list:
                 new_list.append(main_list[i])
                 second_list.append(main_list[i]['id'])
-        
+
         fetch_monthwise_data = []
         cur_date = dateFrom
 
@@ -1882,7 +1932,7 @@ class AccountTrialBalanceReport(models.TransientModel):
                     new_list[j]['level'] = 0
                     new_list[j]['parent_id'] = 'hierarchy_' + str(main_list[k]['group_code']) + str(" ") + str(main_list[k]['group_name'])
                 else:
-                   column1.clear()
+                    column1.clear()
 
 
         for s in range(0,len(new_list)):
@@ -1893,15 +1943,15 @@ class AccountTrialBalanceReport(models.TransientModel):
         finalincomelist = [sum(i) for i in zip(*third_income_lists)]
         total_balance_list = dict(zip(fetch_monthwise_data, finalincomelist))
         finalbalancedict = [{k:v, 'class': 'number', 'no_format_name': v} for k,v in total_balance_list.items()]
-        
+
 
         new_list.append({
-             'id': 'grouped_accounts_total',
-             'account_code': 'group_code',
-             'name': _('Total'),
-             'class': 'total',
-             'columns': finalbalancedict,
-             'level': 1,
+            'id': 'grouped_accounts_total',
+            'account_code': 'group_code',
+            'name': _('Total'),
+            'class': 'total',
+            'columns': finalbalancedict,
+            'level': 1,
         })
         return self.month_group_line_calculation(new_list)
 
