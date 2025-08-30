@@ -26,12 +26,12 @@ from odoo import models, fields
 class AccountAccountInherit(models.Model):
     _inherit = "account.account"
 
-    temp_account_report = fields.Boolean(string= 'Select', default=False)
+    temp_account_report = fields.Boolean(string='Select for Account Report', default=False)
 
 class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
 
-    temp_analytics_report = fields.Boolean(string= 'Select', default=False)
+    temp_analytics_report = fields.Boolean(string='Select for Analytics', default=False)
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"

@@ -12,7 +12,7 @@ from odoo import models, fields, api, _
 class AccountAccount(models.Model):
     _inherit = "account.account"
 
-    temp_for_report = fields.Boolean(string= 'Select', default=False)
+    temp_for_report = fields.Boolean(string='Select for Report', default=False)
 
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
@@ -53,4 +53,4 @@ class AccountMoveLine(models.Model):
 class AccountAnalyticAccount(models.Model):
     _inherit = "account.analytic.account"
 
-    temp_analytic_report = fields.Boolean(string= 'Select', default=False)
+    temp_analytic_report = fields.Boolean(string='Select for Analytic Report', default=False)
