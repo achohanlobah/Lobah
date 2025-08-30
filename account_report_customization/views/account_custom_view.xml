@@ -41,7 +41,7 @@
             <field name="res_model">account.move.line</field>
             <field name="domain">[('display_type', 'not in', ('line_section', 'line_note'))]</field>
             <field name="view_id" ref="view_move_line_report_custom_tree_view"/>
-            <field name="view_mode">tree,form</field>
+            <field name="view_mode">list,form</field>
         </record>
 
     </data>
