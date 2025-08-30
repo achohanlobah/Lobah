@@ -13,7 +13,7 @@
     """,
     'author': 'Caret IT Solutions Pvt. Ltd.',
     'website': 'http://www.caretit.com',
-    'version': '1.1',
+    'version': '1.2',
     'license': 'LGPL-3',
     'depends': ['analytic','accountant', 'account_report_customization'],
     'data': [

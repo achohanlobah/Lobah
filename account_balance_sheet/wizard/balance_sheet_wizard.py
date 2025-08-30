@@ -1176,7 +1176,7 @@ class BalanceSheetReport(models.TransientModel):
                             'account_date': account_date,
                             'account_debit': account_debit,
                             'account_credit': account_credit,
-                            'account_code': account_code,
+                             'account_code': list(account_code.values())[0] if isinstance(account_code, dict) else account_code,
                             'account_name': account_name,
                             'analytic_account': anlaytic_name,
                             'balance': balance,
@@ -1239,7 +1239,9 @@ class BalanceSheetReport(models.TransientModel):
             check_list = [(list(c.keys())[0]) for c in listd]
             a1 = [(list(c.keys())[0]) for c in dimensiondicts]
             res = dimensiondicts + [{c:00.0} for c in check_list if c not in a1]
-            res2 = sorted(res, key = lambda ele: check_list.index(list(ele.keys())[0]))
+            keys_in_res = [list(ele.keys())[0] for ele in res]
+            full_check_list = check_list + [k for k in keys_in_res if k not in check_list]
+            res2 = sorted(res, key=lambda ele: full_check_list.index(list(ele.keys())[0]))
 
         allocated_balance = 0.0
         allcoated_dict = []
@@ -1512,10 +1514,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalBankCash += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
-                worksheet.write(row, 0, account_code,alinedata)
-                worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
-                worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
+                acc_code = mainDict[s].get('account_code')
+                if isinstance(acc_code, dict):
+                    acc_code = next(iter(acc_code.values()))  # extract first value
+
+                worksheet.write(row, 0, acc_code or '', alinedata)
+                worksheet.write(row, 1, mainDict[s]['account_name'], alinedata)
+                worksheet.write(row, 2, round((mainDict[s]['balance']), 2), floatstyle)
+
                 if Projectwise == 'dimension' or Projectwise == 'month' or Projectwise == 'year':
                     col = 3
                     if mainDict[s]['projects']:
@@ -1566,7 +1572,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalReceivable += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
@@ -1621,7 +1634,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalCurrentAsset += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
@@ -1677,7 +1697,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalPrePayment += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
@@ -1748,7 +1775,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalFixedAssets += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
@@ -1804,7 +1838,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalNonCurrentAssets += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((mainDict[s]['balance']),2),floatstyle)
@@ -1889,7 +1930,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalCurrentLiability += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((abs(mainDict[s]['balance'])),1) ,floatstyle)
@@ -1944,7 +1992,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalPayables += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((abs(mainDict[s]['balance'])),2),floatstyle)
@@ -2018,7 +2073,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalNonCurrentLiabilities += mainDict[s]['balance']
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round(-abs(mainDict[s]['balance']),2),floatstyle)
@@ -2272,7 +2334,14 @@ class BalanceSheetReport(models.TransientModel):
                 if mainDict[s]['balance'] == 00.0:
                     continue
                 TotalRetainedEarnings += (-mainDict[s]['balance'])
-                account_code = list(mainDict[s]['account_code'].values())[0]
+                account_code = mainDict[s].get('account_code')
+                if isinstance(account_code, dict):
+                    account_code = next(iter(account_code.values()))
+                elif account_code is None:
+                    account_code = ''
+                else:
+                    account_code = str(account_code)
+
                 worksheet.write(row, 0, account_code,alinedata)
                 worksheet.write(row, 1, mainDict[s]['account_name'],alinedata)
                 worksheet.write(row, 2, round((abs(mainDict[s]['balance'])),2),floatstyle)
