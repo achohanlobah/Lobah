@@ -20,8 +20,7 @@ class ApprovalRequest(models.Model):
                                                    string="Merge Attachments", copy=False)
 
     def sanitize_filename(self, name):
-        """This method replace any symbol to underscore for file name"""
-        return re.sub(r'[\\/*?:"<>|]', "_", name)
+        return re.sub(r'[\\/*?:"<>|]', "_", str(name) if name else "unknown")
 
     def action_attachments_download(self):
         """This method generate the zip file of attachment and combine in 1 zip and download"""
