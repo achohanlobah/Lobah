@@ -1,53 +1,117 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_aprroval_request_document_sfs" inherit_id="approvals.report_aprroval_request_document">
-                <xpath expr="//div[@class='row mt-1'][@t-if='o.date']" position="replace"/>
-        <xpath expr="//h5[@class='mt-2']" position="replace">
-            <h5 class="mt-2 fw-bold fst-italic">
-                Request Type:
-                <span t-field="o.category_id.name"/>
-            </h5>
-        </xpath>
-        <xpath expr="//div[@class='row mt-1'][h6[@t-field='o.amount']]" position="replace">
-        </xpath>
-        <xpath expr="//div[@class='row mt-1'][h6[@t-field='o.partner_id']]" position="after">
-            <div class="row mt-1" t-if="o.x_studio_beneficiary">
-                <h6 class="col-3 fw-bold">Beneficiary:</h6>
-                <h6 t-field="o.x_studio_beneficiary"></h6>
+    <template id="report_aprroval_request_document_extended">
+        <t t-call="web.external_layout">
+            <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)"/>
+            <div style="background-color: #e6f4ff; border: 1px solid #b3d8ff; padding: 10px; border-radius: 5px;"
+                 class="mt-2">
+                <h5 class="fw-bold fst-italic mb-0">
+                    Request Type:
+                    <span t-field="o.category_id.name"/>
+                </h5>
             </div>
-        </xpath>
-         <xpath expr="//div[@class='row mt-1'][h6[@t-field='o.partner_id']]" position="replace">
-            <div class="row mt-1" t-if="o.partner_id">
-                <h6 class="col-3 fw-bold">Contact:</h6>
-                <h6 t-field="o.partner_id">Mitchell Admin</h6>
-            </div>
-        </xpath>
-        <xpath expr="//h6[@t-foreach='o.approver_ids']" position="inside">
-            <span t-if="approver_id.status == 'approved'" t-field="approver_id.write_date" t-options="{'format': 'dd/MM/yyyy HH:mm'}"/>
-        </xpath>
-        <xpath expr="//div[@class='row mt-4']" position="after">
-            <!-- Extra Information Section -->
-            <div class="row">
-                <div class="col-6">
-                    <div class="row">
-                        <h6 class="col-3 fw-bold">Amount:</h6>
-                        <h6 t-field="o.amount"></h6>
-                    </div>
-                     <div class="row">
-                        <h6 class="col-3 fw-bold">Currency:</h6>
-                        <h6 t-field="o.x_studio_currency_id.name"></h6>
-                    </div>
-                    <div class="row">
-                        <h6 class="col-3 fw-bold">Analytic Account:</h6>
-                        <h6 t-field="o.x_studio_analytic_account"></h6>
-                    </div>
-                    <div class="row">
-                        <h6 class="col-3 fw-bold">Country:</h6>
-                        <h6 t-field="o.x_studio_country_1"></h6>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="p-3 border rounded" style="background-color: #e6f4ff; border-color: #b3d8ff;">
+                        <div class="row">
+                            <!-- LEFT SIDE -->
+                            <div class="col-6">
+                                <div class="row mb-2">
+                                    <div class="col-4 fw-bold">Request By:</div>
+                                    <div class="col-8" t-field="o.request_owner_id"/>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-4 fw-bold">Status:</div>
+                                    <div class="col-8" t-field="o.request_status"/>
+                                </div>
+
+                                <!-- Spacer -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div style="height: 10px;"></div>  <!-- adjust height as needed -->
+                                    </div>
+                                </div>
+
+                                <div class="row mb-2" t-if="o.amount">
+                                    <div class="col-4 fw-bold">Amount:</div>
+                                    <div class="col-8" t-field="o.amount"/>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-4 fw-bold">Currency:</div>
+                                    <div class="col-8" t-field="o.x_studio_currency_id.name"/>
+                                </div>
+
+                                <div class="row mb-2">
+                                    <div class="col-4 fw-bold">Analytic Account:</div>
+                                    <div class="col-8" t-field="o.x_studio_analytic_account"/>
+                                </div>
+
+                                <div class="row mb-2" t-if="o.x_studio_country_1">
+                                    <div class="col-4 fw-bold">Country:</div>
+                                    <div class="col-8" t-field="o.x_studio_country_1"/>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT SIDE -->
+                            <div class="col-6">
+                                <div class="row mb-2" t-if="o.partner_id">
+                                    <div class="col-4 fw-bold">Contact:</div>
+                                    <div class="col-8" t-field="o.partner_id"/>
+                                </div>
+
+                                <div class="row mb-2" t-if="o.x_studio_beneficiary">
+                                    <div class="col-4 fw-bold">Beneficiary:</div>
+                                    <div class="col-8" t-field="o.x_studio_beneficiary"/>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </xpath>
+            <div class="row mt-2 col-12">
+                <div class="p-3 border rounded" style="background-color: #e6f4ff; border-color: #b3d8ff;">
+                    <h5 class="fw-bold">Description:</h5>
+                    <div>
+                        <span t-field="o.reason"/>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2 col-12">
+                <div class="p-3 border rounded" style="background-color: #e6f4ff; border-color: #b3d8ff;">
+                    <h5 class="fw-bold">Documents:</h5>
+                    <div t-foreach="o.attachment_ids" t-as="attachment" class="mb-1">
+                        <span t-out="attachment.name"/>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-2 mt-4 col-12">
+                <div class="col-2 fw-bold">Approvers:</div>
+                <div class="col-4">
+                    <div t-foreach="o.approver_ids" t-as="approver_id" class="mb-1">
+                        <span t-field="approver_id.user_id.name"/>
+                        <span t-if="approver_id.status == 'approved'">(&#10004;)</span>
+                        <span t-if="approver_id.status == 'approved'"
+                              t-field="approver_id.write_date"
+                              t-options="{'format': 'dd/MM/yyyy HH:mm'}"/>
+                    </div>
+                </div>
+            </div>
+        </t>
     </template>
+
+    <template id="approvals.report_approval_request">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="sfs_approval_attachment_zip.report_aprroval_request_document_extended"
+                   t-lang="o.partner_id.lang"/>
+            </t>
+        </t>
+    </template>
+
+    <record id="approvals.action_report_approval_request" model="ir.actions.report">
+        <field name="print_report_name">'%s - %s' % (object.name, object.x_studio_beneficiary)</field>
+    </record>
 
 </odoo>
