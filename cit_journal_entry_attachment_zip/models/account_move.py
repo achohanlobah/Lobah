@@ -14,8 +14,7 @@ class AccountMove(models.Model):
     _inherit = 'account.move'
 
     def sanitize_filename(self, name):
-        """Sanitize filenames by replacing special characters with underscores."""
-        return re.sub(r'[\\/*?:"<>|]', "_", name)
+        return re.sub(r'[\\/*?:"<>|]', "_", str(name) if name else "unknown")
 
     def action_attachments_download(self):
         """Download all attachments of selected Journal Entries as a single ZIP file."""

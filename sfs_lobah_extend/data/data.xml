@@ -1,0 +1,12 @@
+<odoo>
+    <data>
+
+        <record model="ir.actions.server" id="account.action_move_force_register_payment">
+            <field name="code">
+                if records:
+                action = records.with_context(pay_all=True).action_force_register_payment()
+            </field>
+        </record>
+
+    </data>
+</odoo>

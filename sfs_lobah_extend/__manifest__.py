@@ -24,13 +24,14 @@
     # Dependencies
     # =========================
     "depends": [
-        'hr_payroll', 'approvals'
+        'account'
     ],
 
     # =========================
     # Data Files (Security, Views, Wizards, Data)
     # =========================
     "data": [
+        'data/data.xml'
     ],
 
     # =========================

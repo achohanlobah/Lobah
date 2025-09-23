@@ -9,6 +9,11 @@ from PyPDF2 import PdfMerger, PdfReader
 from odoo.exceptions import UserError
 from odoo.tools import pdf
 from odoo import models, fields
+import io
+import zipfile
+from odoo.http import request
+from odoo.tools.misc import xlsxwriter
+from odoo.tools import pdf
 
 _logger = logging.getLogger(__name__)
 
@@ -17,11 +22,10 @@ class ApprovalRequest(models.Model):
     _inherit = 'approval.request'
 
     merge_approval_attachment_ids = fields.One2many('merge.approval.attachments', 'approval_request_id',
-                                                   string="Merge Attachments", copy=False)
+                                                    string="Merge Attachments", copy=False)
 
     def sanitize_filename(self, name):
-        """This method replace any symbol to underscore for file name"""
-        return re.sub(r'[\\/*?:"<>|]', "_", name)
+        return re.sub(r'[\\/*?:"<>|]', "_", str(name) if name else "unknown")
 
     def action_attachments_download(self):
         """This method generate the zip file of attachment and combine in 1 zip and download"""
@@ -198,4 +202,32 @@ class ApprovalRequest(models.Model):
                 'type': 'rainbow_man',
                 'message': "Merged attachment created successfully",
             },
+        }
+
+    def action_approval_report_multi_pdf(self):
+        """get multiple pdf's and create zip"""
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+            for record in self:
+                pdf_content = self.env['ir.actions.report']._render_qweb_pdf(
+                    'approvals.action_report_approval_request',
+                    res_ids=[record.id]
+                )[0]
+                filename = f"{record.name}-{record.x_studio_beneficiary}.pdf"
+                zip_file.writestr(filename, pdf_content)
+
+        zip_buffer.seek(0)
+        base64_zip = base64.b64encode(zip_buffer.read())
+        attachment = self.env['ir.attachment'].create({
+            'name': 'approval_reports.zip',
+            'type': 'binary',
+            'datas': base64_zip,
+            'mimetype': 'application/zip',
+        })
+
+        download_url = f'/web/content/{attachment.id}?download=true'
+        return {
+            'type': 'ir.actions.act_url',
+            'url': download_url,
+            'target': 'self',
         }
