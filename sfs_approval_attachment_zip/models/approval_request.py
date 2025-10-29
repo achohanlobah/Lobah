@@ -91,8 +91,8 @@ class ApprovalRequest(models.Model):
 
         file_name = 'Attachments'
         if len(self.ids) == 1:
-            file_name = 'Attachments' if self.name == '/' else self.name
-
+            file_name = 'Attachments' if self.name == '/' else '%s - %s' % (
+                        self.name, self.x_studio_beneficiary)
         attachment = self.merge_attachment_pdf(attachments, name=file_name, move_name='Attachments')
 
         # If merge_attachment_pdf returned a dict (warning), return it directly
