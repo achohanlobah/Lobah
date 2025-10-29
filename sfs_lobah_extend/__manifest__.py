@@ -24,14 +24,15 @@
     # Dependencies
     # =========================
     "depends": [
-        'account'
+        'account_asset'
     ],
 
     # =========================
     # Data Files (Security, Views, Wizards, Data)
     # =========================
     "data": [
-        'data/data.xml'
+        'data/data.xml',
+        'views/account_move_view.xml',
     ],
 
     # =========================
