@@ -45,7 +45,8 @@ class ApprovalRequest(models.Model):
                         for attachment in attachments:
                             sub_zip_file.writestr(attachment.name, base64.b64decode(attachment.datas))
                     sub_zip_buffer.seek(0)
-                    file_name = 'attachments_%s' % approval_id.id if approval_id.name == '/' else approval_id.name
+                    file_name = 'attachments_%s' % approval_id.id if approval_id.name == '/' else '%s - %s' % (
+                        approval_id.name, approval_id.x_studio_beneficiary)
                     zip_file.writestr(self.sanitize_filename(file_name) + '.zip', sub_zip_buffer.read())
                 zip_buffer.seek(0)
         _logger.info("Zip Create and Combine success!!!!")
