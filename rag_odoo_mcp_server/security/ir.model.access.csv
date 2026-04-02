@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_rag_odoo_mcp_server_generate_api_key_wizard,access.rag_odoo_mcp_server.generate_api_key_wizard,rag_odoo_mcp_server.model_rag_odoo_mcp_server_generate_api_key_wizard,base.group_system,1,1,1,1

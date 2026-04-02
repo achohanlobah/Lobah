@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="res_config_settings_view_form_inherit_rag_odoo_mcp_server" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.inherit.rag.odoo.mcp.server</field>
+            <field name="model">res.config.settings</field>
+            <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//form" position="inside">
+                    <app data-string="RAG Odoo MCP Server" string="RAG Odoo MCP Server" name="rag_odoo_mcp_server" groups="base.group_system">
+                        <block title="MCP Endpoint">
+                            <setting string="URL" help="After installing, MCP is available at: http://&lt;your-odoo-host&gt;:&lt;port&gt;/mcp/sse?db=&lt;database&gt;. In Cursor/Claude use mcp-remote with --transport sse-only and --allow-http.">
+                                <field name="mcp_endpoint_hint" readonly="1" nolabel="1"/>
+                            </setting>
+                        </block>
+                        <block title="API tokens (User = read-only, Admin = read+write)">
+                            <setting string="Require API key" help="If checked, clients must send a valid User or Admin token. If not checked, no token is required (read-only access).">
+                                <field name="require_api_key"/>
+                            </setting>
+                            <setting string="User token (read-only)" help="Give this token to standard users. Claude will only be able to search and read data (no create, edit or delete).">
+                                <field name="user_token_set" readonly="1" nolabel="1"/>
+                                <button string="Generate User token" name="action_generate_mcp_api_key_user" type="object" class="btn-secondary"/>
+                            </setting>
+                            <setting string="Admin token (read+write)" help="⚠️ Give only to managers or admins. With this token Claude can create, edit and delete records (orders, invoices, etc.). Use with care and ensure backups.">
+                                <field name="admin_token_set" readonly="1" nolabel="1"/>
+                                <button string="Generate Admin token" name="action_generate_mcp_api_key_admin" type="object" class="btn-primary"/>
+                            </setting>
+                        </block>
+                        <block title="Company Context">
+                            <setting string="Default company" help="If set, all MCP operations will run in this company's context by default. Claude can override this per-tool call using company_id, or per-request via ?company_id= or X-Odoo-Company header. Leave empty for no default (multi-company: all companies visible).">
+                                <field name="mcp_default_company_id" nolabel="1"/>
+                            </setting>
+                        </block>
+                    </app>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
